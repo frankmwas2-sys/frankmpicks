@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="theme-color" content="#1a0a2e"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="FM PICKS"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="logo.png"/>
+<title>FRANK M PICKS</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0e0e14;--surface:#16161f;--card:#1e1e2a;--border:#2a2a3a;--accent:#f0c040;--accent2:#e06030;--green:#3dd68c;--red:#ff5555;--blue:#4da6ff;--purple:#a78bfa;--text:#f0f0f0;--muted:#888;--radius:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;position:relative;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:0;background:url('logo.png') center/65% no-repeat;opacity:.045;pointer-events:none}
+body::after{content:'';position:fixed;inset:0;z-index:0;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 10%,transparent),color-mix(in srgb,var(--accent2) 7%,transparent));pointer-events:none}
+.header,.bottom-nav,.tab,.modal-overlay{position:relative;z-index:1}
+.header{background:linear-gradient(135deg,#1a0a2ef0,#0e0e14f0);padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.header-left{display:flex;align-items:center;gap:10px}
+.header-logo{width:36px;height:36px;border-radius:8px;object-fit:cover;border:1px solid var(--border)}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--accent)}
+.logo span{color:var(--accent2)}
+.date-badge{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:11px;color:var(--muted)}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:200;backdrop-filter:blur(12px)}
+.nav-btn{flex:1;padding:10px 0 8px;background:none;border:none;color:var(--muted);font-size:8px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav-btn .icon{font-size:17px}
+.nav-btn.active{color:var(--accent)}
+.nav-dot{width:0;height:4px;border-radius:50%;margin-top:2px}
+.nav-btn.active .nav-dot{width:4px;background:var(--accent)}
+.tab{display:none;padding:16px}.tab.active{display:block}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--accent);margin-bottom:14px}
+.section-sub{font-size:12px;color:var(--muted);margin-top:-10px;margin-bottom:14px}
+
+/* WEEK STRIP */
+.week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px}
+.day-cell{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:5px 3px;text-align:center;cursor:pointer}
+.day-cell.today{border-color:var(--accent)}
+.day-cell.selected{background:var(--accent);color:#000;border-color:var(--accent)}
+.day-cell .dn{font-size:8px;font-weight:600;text-transform:uppercase;color:var(--muted)}
+.day-cell.selected .dn,.day-cell.selected .ds,.day-cell.selected .dp{color:#000a}
+.day-cell .dd{font-family:'Bebas Neue',sans-serif;font-size:16px;line-height:1.2}
+.day-cell .ds{font-size:7px;color:var(--green)}
+.day-cell .dp{font-size:7px;color:var(--blue)}
+
+/* PRODUCT CARDS */
+.product-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.product-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;position:relative}
+.product-name{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;margin-bottom:8px}
+.pc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.pc-label{font-size:9px;color:var(--muted);text-transform:uppercase}
+.pc-val{font-size:11px;font-weight:600}
+.pc-sub{font-size:9px;color:var(--blue);margin-left:3px}
+.pcs-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin:6px 0;padding:6px;background:var(--bg);border-radius:8px}
+.ps-cell{text-align:center}
+.ps-cell .ps-num{font-family:'Bebas Neue',sans-serif;font-size:16px}
+.ps-cell .ps-lbl{font-size:8px;color:var(--muted)}
+.stock-badge{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600}
+.s-ok{background:#3dd68c22;color:var(--green)}.s-low{background:#f0c04022;color:var(--accent)}.s-out{background:#ff555522;color:var(--red)}
+.perf-badge{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600}
+.perf-up{background:#3dd68c22;color:var(--green)}.perf-down{background:#ff555522;color:var(--red)}
+.mini-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:6px}
+.mini-fill{height:100%;border-radius:2px;transition:width .4s}
+
+/* FORMS */
+.input-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.input-panel h3{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;margin-bottom:12px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-row.full{grid-template-columns:1fr}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.form-group input,.form-group select{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;width:100%;outline:none}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent);box-shadow:0 0 0 2px #f0c04018}
+select option{background:var(--surface)}
+.btn{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;cursor:pointer}
+.btn-accent{background:var(--accent);color:#000}.btn-danger{background:var(--accent2);color:#fff}
+.btn-green{background:var(--green);color:#000}.btn-wa{background:#25D366;color:#fff}.btn:active{transform:scale(.97)}
+.hint{font-size:10px;color:var(--muted);margin-top:-6px;margin-bottom:8px}
+
+/* SUMMARY */
+.period-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.ptab{padding:7px 14px;border:1px solid var(--border);background:var(--card);border-radius:20px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'Bebas Neue',sans-serif;letter-spacing:1px}
+.ptab.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.totals-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.total-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center}
+.t-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.t-value{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px}
+.t-sub{font-size:10px;color:var(--blue);margin-top:3px}
+.t-sales{color:var(--blue)}.t-restock{color:var(--accent2)}.t-profit{color:var(--green)}.t-expense{color:var(--red)}
+.product-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.ps-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.ps-name{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;margin-bottom:6px}
+.ps-row{display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px}
+.ps-lbl{color:var(--muted)}.ps-v{font-weight:600}
+.period-label{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;color:var(--muted);margin-bottom:10px;text-align:center}
+
+/* EXPENSES */
+.exp-list,.debt-list,.edit-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.exp-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+.exp-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px}
+
+/* DEBT */
+.debt-tabs{display:flex;gap:8px;margin-bottom:14px}
+.debt-tab{flex:1;padding:9px;border:1px solid var(--border);background:var(--card);border-radius:8px;color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;cursor:pointer;text-align:center}
+.debt-tab.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.debt-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.debt-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.debt-given .debt-amount{color:var(--accent2)}.debt-received .debt-amount{color:var(--green)}
+.debt-amount{font-size:14px;font-weight:700}
+.debt-meta{font-size:10px;color:var(--muted)}.debt-note{font-size:11px;color:var(--muted);margin-top:4px;font-style:italic}
+.debt-actions{display:flex;gap:6px;margin-top:8px}
+.badge-paid{background:#3dd68c22;color:var(--green);border:none;border-radius:5px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer}
+.badge-del{background:#ff555522;color:var(--red);border:none;border-radius:5px;padding:4px 10px;font-size:10px;font-weight:600;cursor:pointer}
+.badge-status{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600}
+.status-pending{background:#f0c04020;color:var(--accent)}.status-paid{background:#3dd68c22;color:var(--green)}
+
+/* EDIT */
+.filter-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.filter-btn{padding:6px 12px;border:1px solid var(--border);background:var(--card);border-radius:20px;color:var(--muted);font-size:11px;cursor:pointer}
+.filter-btn.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
+.edit-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:8px}
+.edit-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.edit-title{font-size:13px;font-weight:600}.edit-meta{font-size:10px;color:var(--muted);margin-top:2px}
+.type-badge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600}
+.type-sale{background:#4da6ff22;color:var(--blue)}.type-restock{background:#f0c04022;color:var(--accent)}
+.type-expense{background:#ff555522;color:var(--red)}.type-debt{background:#a78bfa22;color:var(--purple)}
+.edit-vals{display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.edit-val{display:flex;flex-direction:column;gap:2px}
+.ev-lbl{font-size:9px;color:var(--muted);text-transform:uppercase}.ev-txt{font-size:12px;font-weight:500}
+.edit-actions{display:flex;gap:8px}
+.btn-edit{flex:1;padding:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer}
+.btn-del{flex:1;padding:8px;border:none;background:#ff555522;color:var(--red);border-radius:8px;font-family:'Bebas Neue',sans-serif;font-size:13px;cursor:pointer}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:#000c;z-index:500;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:18px 18px 0 0;padding:20px 16px 36px;width:100%;max-width:480px;animation:slideUp .2s ease}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--accent);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer}
+.modal-btns{display:flex;gap:8px;margin-top:14px}
+.modal-btns .btn{flex:1}
+
+/* SETTINGS */
+.settings-section{margin-bottom:20px}
+.settings-section h3{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;color:var(--accent);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.product-manage-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.pm-color{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:8px}
+.pm-del{background:none;border:1px solid var(--border);color:var(--red);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer}
+.theme-row{display:flex;gap:8px;margin-bottom:8px}
+.theme-opt{flex:1;padding:10px;border:1px solid var(--border);background:var(--card);border-radius:10px;text-align:center;cursor:pointer;font-size:12px;color:var(--muted)}
+.theme-opt.active{border-color:var(--accent);color:var(--accent);font-weight:600}
+
+/* AI */
+.ai-hero{background:linear-gradient(135deg,#1a0a2ecc,#0e1a2ecc);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;text-align:center}
+.ai-hero h2{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--accent);margin-bottom:4px}
+.ai-hero p{font-size:11px;color:var(--muted);line-height:1.5}
+.chat-window{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;min-height:40px}
+.msg{border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;max-width:92%}
+.msg-user{background:var(--accent);color:#000;align-self:flex-end;border-bottom-right-radius:4px;font-weight:500}
+.msg-ai{background:var(--card);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:4px}
+.msg-ai strong{color:var(--accent)}
+.msg-thinking{background:var(--card);border:1px solid var(--border);color:var(--muted);align-self:flex-start;font-style:italic;font-size:12px;padding:10px 14px;border-radius:12px}
+.thinking-dots span{display:inline-block;animation:dot 1.2s infinite;opacity:0}
+.thinking-dots span:nth-child(2){animation-delay:.2s}.thinking-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,80%,100%{opacity:0}40%{opacity:1}}
+.ai-input-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:10px}
+.ai-input-wrap textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;resize:none;outline:none;height:80px;line-height:1.5}
+.ai-input-wrap textarea:focus{border-color:var(--accent)}
+.ai-input-wrap textarea::placeholder{color:var(--muted)}
+.ai-btn-row{display:flex;gap:8px;margin-top:8px}
+.btn-ai{flex:1;padding:11px;border:none;border-radius:9px;font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000}
+.btn-ai-clear{padding:11px 14px;border:1px solid var(--border);border-radius:9px;font-family:'Bebas Neue',sans-serif;font-size:14px;cursor:pointer;background:var(--surface);color:var(--muted)}
+.quick-prompts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.qp{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:11px;color:var(--muted);cursor:pointer}
+.ai-copy-btn{margin-top:8px;background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer}
+
+/* TOAST */
+.toast{position:fixed;top:74px;left:50%;transform:translateX(-50%) translateY(-16px);background:var(--green);color:#000;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.empty{text-align:center;padding:30px 0;color:var(--muted);font-size:13px}
+.empty .e-icon{font-size:32px;margin-bottom:8px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <img class="header-logo" src="logo.png" alt="FM"/>
+    <div class="logo">FRANK M <span>PICKS</span></div>
+  </div>
+  <div class="date-badge" id="headerDate"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">EDIT ENTRY <button class="modal-close" onclick="closeModal()">✕</button></div>
+    <input type="hidden" id="editId"/><input type="hidden" id="editCategory"/>
+    <div id="editModalBody"></div>
+    <div class="modal-btns">
+      <button class="btn btn-danger" onclick="closeModal()">CANCEL</button>
+      <button class="btn btn-accent" onclick="saveEdit()">SAVE CHANGES</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: PRODUCTS -->
+<div class="tab active" id="tab-products">
+  <div class="section-title">Products</div>
+  <div class="week-strip" id="weekStrip"></div>
+  <div class="product-grid" id="productGrid"></div>
+  <div class="input-panel">
+    <h3>Record Sale</h3>
+    <p class="hint">Enter total KES received and pieces sold — independently per transaction</p>
+    <div class="form-row">
+      <div class="form-group"><label>Product</label><select id="saleProduct"></select></div>
+      <div class="form-group"><label>Day</label><select id="saleDay"></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Amount (KES)</label><input type="number" id="saleAmount" placeholder="e.g. 1500"/></div>
+      <div class="form-group"><label>Pieces Sold</label><input type="number" id="saleQty" placeholder="e.g. 2" value="1"/></div>
+    </div>
+    <button class="btn btn-accent" onclick="recordSale()">RECORD SALE</button>
+  </div>
+
+  <div class="input-panel">
+    <h3>Record Restock</h3>
+    <p class="hint">Enter total KES spent on restock and pieces received — independently</p>
+    <div class="form-row">
+      <div class="form-group"><label>Product</label><select id="restockProduct"></select></div>
+      <div class="form-group"><label>Date</label><input type="date" id="restockDate"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Cost (KES)</label><input type="number" id="restockCost" placeholder="e.g. 3000"/></div>
+      <div class="form-group"><label>Pieces Received</label><input type="number" id="restockQty" placeholder="e.g. 10"/></div>
+    </div>
+    <button class="btn btn-green" onclick="recordRestock()">RECORD RESTOCK</button>
+  </div>
+</div>
+
+<!-- TAB: SUMMARY -->
+<div class="tab" id="tab-summary">
+  <div class="section-title">Summary</div>
+  <div class="period-tabs">
+    <div class="ptab active" id="ptab-today" onclick="setPeriod('today',this)">TODAY</div>
+    <div class="ptab" id="ptab-week" onclick="setPeriod('week',this)">WEEK</div>
+    <div class="ptab" id="ptab-month" onclick="setPeriod('month',this)">MONTH</div>
+    <div class="ptab" id="ptab-year" onclick="setPeriod('year',this)">YEAR</div>
+    <div class="ptab" id="ptab-all" onclick="setPeriod('all',this)">ALL TIME</div>
+  </div>
+  <div class="period-label" id="periodLabel"></div>
+  <div class="totals-grid" id="totalsGrid"></div>
+  <div class="section-title" style="font-size:16px;margin-bottom:10px">Per Product</div>
+  <div class="product-summary-grid" id="productSummaryGrid"></div>
+  <button class="btn btn-wa" style="margin-bottom:14px" onclick="shareWhatsApp()">📲 SHARE ON WHATSAPP</button>
+  <div class="section-title" style="font-size:16px;margin-bottom:10px">Expenses</div>
+  <div class="input-panel">
+    <h3>Add Expense</h3>
+    <div class="form-row full"><div class="form-group"><label>Description</label><input type="text" id="expDesc" placeholder="e.g. Transport, Packaging…"/></div></div>
+    <div class="form-row">
+      <div class="form-group"><label>Amount (KES)</label><input type="number" id="expAmount" placeholder="0"/></div>
+      <div class="form-group"><label>Date</label><input type="date" id="expDate"/></div>
+    </div>
+    <button class="btn btn-danger" onclick="addExpense()">ADD EXPENSE</button>
+  </div>
+  <div class="exp-list" id="expList"></div>
+</div>
+
+<!-- TAB: STOCK -->
+<div class="tab" id="tab-stock">
+  <div class="section-title">Stock</div>
+  <div class="section-sub">Pieces restocked vs sold per product</div>
+  <div id="stockList"></div>
+</div>
+
+<!-- TAB: DEBTS -->
+<div class="tab" id="tab-debts">
+  <div class="section-title">Debts</div>
+  <div class="debt-tabs">
+    <div class="debt-tab active" id="dtab-given" onclick="switchDebtTab('given')">GIVEN OUT</div>
+    <div class="debt-tab" id="dtab-received" onclick="switchDebtTab('received')">RECEIVED</div>
+  </div>
+  <div class="input-panel">
+    <h3>Add Debt</h3>
+    <div class="form-row full"><div class="form-group"><label>Person's Name</label><input type="text" id="debtName" placeholder="Name…"/></div></div>
+    <div class="form-row">
+      <div class="form-group"><label>Amount (KES)</label><input type="number" id="debtAmount" placeholder="0"/></div>
+      <div class="form-group"><label>Date</label><input type="date" id="debtDate"/></div>
+    </div>
+    <div class="form-row full"><div class="form-group"><label>Note (optional)</label><input type="text" id="debtNote" placeholder="Reason…"/></div></div>
+    <div class="form-row"><div class="form-group"><label>Type</label><select id="debtType"><option value="given">Given Out</option><option value="received">Received</option></select></div></div>
+    <button class="btn btn-accent" onclick="addDebt()">SAVE DEBT</button>
+  </div>
+  <div class="debt-list" id="debtList"></div>
+</div>
+
+<!-- TAB: EDIT -->
+<div class="tab" id="tab-edit">
+  <div class="section-title">Edit Entries</div>
+  <div class="section-sub">Tap any entry to correct or delete it</div>
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="setEF('all',this)">All</button>
+    <button class="filter-btn" onclick="setEF('sale',this)">Sales</button>
+    <button class="filter-btn" onclick="setEF('restock',this)">Restock</button>
+    <button class="filter-btn" onclick="setEF('expense',this)">Expenses</button>
+    <button class="filter-btn" onclick="setEF('debt',this)">Debts</button>
+  </div>
+  <div class="edit-list" id="editList"></div>
+</div>
+
+<!-- TAB: AI -->
+<div class="tab" id="tab-ai">
+  <div class="ai-hero">
+    <div style="font-size:36px;margin-bottom:6px">🤖</div>
+    <h2>AI Assistant</h2>
+    <p>Ask anything — works offline, no internet needed</p>
+  </div>
+  <div class="quick-prompts">
+    <div class="qp" onclick="usePrompt('Add a monthly report')">🗓️ Monthly report</div>
+    <div class="qp" onclick="usePrompt('Show my total sales and profit')">📊 My data</div>
+    <div class="qp" onclick="usePrompt('How do I fix a wrong entry')">✏️ Fix entry</div>
+    <div class="qp" onclick="usePrompt('Add a new product')">👗 Add product</div>
+    <div class="qp" onclick="usePrompt('Change the app color theme')">🎨 Theme</div>
+    <div class="qp" onclick="usePrompt('Export my data')">💾 Export</div>
+  </div>
+  <div class="chat-window" id="chatWindow"></div>
+  <div class="ai-input-wrap">
+    <textarea id="aiPrompt" placeholder="Ask anything about your app…"></textarea>
+    <div class="ai-btn-row">
+      <button class="btn-ai-clear" onclick="clearChat()">CLEAR</button>
+      <button class="btn-ai" onclick="sendToAI()">⚡ SEND</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: SETTINGS -->
+<div class="tab" id="tab-settings">
+  <div class="section-title">Settings</div>
+  <div class="settings-section">
+    <h3>Products</h3>
+    <div id="productManageList"></div>
+    <div class="input-panel" style="margin-top:0">
+      <h3>Add New Product</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Name</label><input type="text" id="newProductName" placeholder="e.g. Skirts"/></div>
+        <div class="form-group"><label>Color</label>
+          <select id="newProductColor">
+            <option value="#f0c040">Gold</option><option value="#e06030">Orange</option>
+            <option value="#4da6ff">Blue</option><option value="#a78bfa">Purple</option>
+            <option value="#3dd68c">Green</option><option value="#ff5555">Red</option>
+            <option value="#ff80ab">Pink</option><option value="#00bcd4">Cyan</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row"><div class="form-group"><label>Low Stock Alert (pieces)</label><input type="number" id="newProductMin" placeholder="e.g. 3"/></div></div>
+      <button class="btn btn-accent" onclick="addProduct()">ADD PRODUCT</button>
+    </div>
+  </div>
+  <div class="settings-section">
+    <h3>App Theme</h3>
+    <div class="theme-row">
+      <div class="theme-opt active" id="theme-gold" onclick="setTheme('gold')">🟡 Gold</div>
+      <div class="theme-opt" id="theme-green" onclick="setTheme('green')">🟢 Green</div>
+      <div class="theme-opt" id="theme-blue" onclick="setTheme('blue')">🔵 Blue</div>
+      <div class="theme-opt" id="theme-red" onclick="setTheme('red')">🔴 Red</div>
+    </div>
+  </div>
+  <div class="settings-section">
+    <h3>Data</h3>
+    <button class="btn btn-green" onclick="exportCSV()">💾 EXPORT ALL DATA (CSV)</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-products" onclick="switchTab('products')"><span class="icon">👔</span>Products<div class="nav-dot"></div></button>
+  <button class="nav-btn" id="nav-summary" onclick="switchTab('summary')"><span class="icon">📊</span>Summary<div class="nav-dot"></div></button>
+  <button class="nav-btn" id="nav-stock" onclick="switchTab('stock')"><span class="icon">📦</span>Stock<div class="nav-dot"></div></button>
+  <button class="nav-btn" id="nav-debts" onclick="switchTab('debts')"><span class="icon">💳</span>Debts<div class="nav-dot"></div></button>
+  <button class="nav-btn" id="nav-edit" onclick="switchTab('edit')"><span class="icon">✏️</span>Edit<div class="nav-dot"></div></button>
+  <button class="nav-btn" id="nav-ai" onclick="switchTab('ai')"><span class="icon">🤖</span>AI<div class="nav-dot"></div></button>
+  <button class="nav-btn" id="nav-settings" onclick="switchTab('settings')"><span class="icon">⚙️</span>Settings<div class="nav-dot"></div></button>
+</nav>
+
+<script>
+// ============ STATE ============
+function load(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+
+let products=load('fmp_products',[
+  {id:'blazer',name:'Blazer',color:'#f0c040',minStock:3},
+  {id:'waistcoat',name:'Waist Coat',color:'#e06030',minStock:3},
+  {id:'chiffon',name:'Chiffon Top',color:'#4da6ff',minStock:3},
+  {id:'sleeveless',name:'Sleeveless Blazer',color:'#a78bfa',minStock:3},
+]);
+
+// SALES: {id, product, amount(KES total for that sale), qty(pieces sold), date}
+// RESTOCKS: {id, product, cost(KES total spent), qty(pieces received), date}
+// Each entry is FULLY INDEPENDENT — amount and qty are separate fields
+let sales     = load('fmp_sales',[]);
+let restocks  = load('fmp_restocks',[]);
+let expenses  = load('fmp_expenses',[]);
+let debts     = load('fmp_debts',[]);
+let stock     = load('fmp_stock',{});   // {productId: currentPieces}
+let cycles    = load('fmp_cycles',{});  // {productId: [{cycle}]}
+
+// ============ HELPERS ============
+function today(){return new Date().toISOString().slice(0,10)}
+function fmt(d){try{return new Date(d).toLocaleDateString('en-KE',{day:'2-digit',month:'short'})}catch{return d||''}}
+function fmtDay(d){try{return new Date(d).toLocaleDateString('en-KE',{weekday:'short'})}catch{return ''}}
+function uid(){return Date.now()+Math.random().toString(36).slice(2,6)}
+
+function getWeekDates(){
+  const days=[];
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10));}
+  return days;
+}
+
+// Period filter helpers
+function getPeriodDates(period){
+  const now=new Date();
+  const t=today();
+  if(period==='today') return {from:t,to:t};
+  if(period==='week'){
+    const from=new Date();from.setDate(from.getDate()-6);
+    return{from:from.toISOString().slice(0,10),to:t};
+  }
+  if(period==='month'){
+    const from=new Date(now.getFullYear(),now.getMonth(),1);
+    return{from:from.toISOString().slice(0,10),to:t};
+  }
+  if(period==='year'){
+    const from=new Date(now.getFullYear(),0,1);
+    return{from:from.toISOString().slice(0,10),to:t};
+  }
+  return{from:'2000-01-01',to:'2099-12-31'};
+}
+
+function inPeriod(date,period){
+  const {from,to}=getPeriodDates(period);
+  return date>=from&&date<=to;
+}
+
+function periodLabel(period){
+  const now=new Date();
+  if(period==='today') return now.toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long'});
+  if(period==='week') return 'Last 7 Days';
+  if(period==='month') return now.toLocaleDateString('en-KE',{month:'long',year:'numeric'});
+  if(period==='year') return now.getFullYear().toString();
+  return 'All Time';
+}
+
+let selectedDay=today();
+let currentPeriod='today';
+
+// ============ NAV ============
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('nav-'+tab).classList.add('active');
+  render();
+}
+
+// ============ TOAST ============
+function toast(msg,color='var(--green)'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.background=color;
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ============ RENDER ============
+function render(){
+  document.getElementById('headerDate').textContent=new Date().toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short'});
+  populateDropdowns();
+  populateSaleDayDropdown();
+  renderWeekStrip();
+  renderProducts();
+  renderSummary();
+  renderStock();
+  renderDebts();
+  renderEdit();
+  renderProductManage();
+}
+
+function populateDropdowns(){
+  ['saleProduct','restockProduct'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    const cur=el.value;
+    el.innerHTML=products.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+    if(cur)el.value=cur;
+  });
+}
+
+function populateSaleDayDropdown(){
+  const el=document.getElementById('saleDay');if(!el)return;
+  const days=getWeekDates().reverse();
+  el.innerHTML=days.map(d=>{
+    const label=d===today()?`Today (${fmtDay(d)})`:fmtDay(d)+' '+fmt(d);
+    return`<option value="${d}"${d===selectedDay?' selected':''}>${label}</option>`;
+  }).join('');
+}
+
+// ============ WEEK STRIP ============
+function renderWeekStrip(){
+  const days=getWeekDates();
+  document.getElementById('weekStrip').innerHTML=days.map(d=>{
+    const daySalesAmt=sales.filter(s=>s.date===d).reduce((a,s)=>a+s.amount,0);
+    const dayPcs=sales.filter(s=>s.date===d).reduce((a,s)=>a+(s.qty||0),0);
+    const isSel=d===selectedDay;
+    return`<div class="day-cell${d===today()?' today':''}${isSel?' selected':''}" onclick="selectDay('${d}')">
+      <div class="dn">${fmtDay(d)}</div>
+      <div class="dd">${new Date(d).getDate()}</div>
+      <div class="ds">${daySalesAmt>0?Math.round(daySalesAmt/1000)+'k':''}</div>
+      <div class="dp">${dayPcs>0?dayPcs+'pc':''}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectDay(d){
+  selectedDay=d;
+  const el=document.getElementById('saleDay');
+  if(el)el.value=d;
+  renderWeekStrip();
+  renderProducts();
+}
+
+// ============ PRODUCT STATS (for any period or day) ============
+function getStats(pid,period,day){
+  // day mode: single day stats; period mode: period stats
+  const filterFn=day
+    ?s=>s.product===pid&&s.date===day
+    :s=>s.product===pid&&inPeriod(s.date,period);
+  const filterFnR=day
+    ?r=>r.product===pid&&r.date===day
+    :r=>r.product===pid&&inPeriod(r.date,period);
+
+  const pSales=sales.filter(filterFn);
+  const pRestocks=restocks.filter(filterFnR);
+
+  const salesAmt=pSales.reduce((a,s)=>a+s.amount,0);
+  const salesPcs=pSales.reduce((a,s)=>a+(s.qty||0),0);
+  const restockAmt=pRestocks.reduce((a,r)=>a+r.cost,0);
+  const restockPcs=pRestocks.reduce((a,r)=>a+(r.qty||0),0);
+  const profit=salesAmt-restockAmt;
+  const perf=restockAmt>0?Math.round((profit/restockAmt)*100):0;
+  const curStock=stock[pid]||0;
+  return{salesAmt,salesPcs,restockAmt,restockPcs,profit,perf,curStock};
+}
+
+// ============ RENDER PRODUCTS (shows selected day) ============
+function renderProducts(){
+  const g=document.getElementById('productGrid');
+  g.innerHTML=products.map(p=>{
+    const s=getStats(p.id,null,selectedDay);
+    const allTime=getStats(p.id,'all',null);
+    const profCls=allTime.profit>=0?'perf-up':'perf-down';
+    const stockCls=s.curStock===0?'s-out':s.curStock<=(p.minStock||3)?'s-low':'s-ok';
+    const stockLabel=s.curStock===0?'OUT':`${s.curStock}pc`;
+    const pct=Math.min(100,Math.round((s.curStock/Math.max(1,(p.minStock||3)*3))*100));
+    const dayLbl=selectedDay===today()?'Today':'Day';
+    return`<div class="product-card" style="border-top:3px solid ${p.color}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div class="product-name">${p.name}</div>
+        <span class="stock-badge ${stockCls}">${stockLabel}</span>
+      </div>
+      <div class="pcs-strip">
+        <div class="ps-cell">
+          <div class="ps-num" style="color:var(--accent2)">${allTime.restockPcs}</div>
+          <div class="ps-lbl">Restocked</div>
+        </div>
+        <div class="ps-cell">
+          <div class="ps-num" style="color:var(--blue)">${s.salesPcs}</div>
+          <div class="ps-lbl">${dayLbl} Sold</div>
+        </div>
+        <div class="ps-cell">
+          <div class="ps-num" style="color:${s.curStock===0?'var(--red)':s.curStock<=(p.minStock||3)?'var(--accent)':'var(--green)'}">${s.curStock}</div>
+          <div class="ps-lbl">In Stock</div>
+        </div>
+      </div>
+      <div class="pc-row"><span class="pc-label">${dayLbl} Sales</span><span class="pc-val" style="color:var(--accent)">KES ${s.salesAmt.toLocaleString()} <span class="pc-sub">${s.salesPcs}pc</span></span></div>
+      <div class="pc-row"><span class="pc-label">Total Sales</span><span class="pc-val" style="color:var(--blue)">KES ${allTime.salesAmt.toLocaleString()} <span class="pc-sub">${allTime.salesPcs}pc</span></span></div>
+      <div class="pc-row"><span class="pc-label">Restock Cost</span><span class="pc-val" style="color:var(--accent2)">KES ${allTime.restockAmt.toLocaleString()} <span class="pc-sub">${allTime.restockPcs}pc</span></span></div>
+      <div class="pc-row"><span class="pc-label">Profit/Loss</span><span class="pc-val ${allTime.profit>=0?'':''}${''}">
+        <span style="color:${allTime.profit>=0?'var(--green)':'var(--red)'}">KES ${allTime.profit.toLocaleString()}</span>
+        <span class="perf-badge ${profCls}" style="margin-left:4px">${allTime.perf>=0?'▲':'▼'}${Math.abs(allTime.perf)}%</span>
+      </span></div>
+      <div class="mini-bar"><div class="mini-fill" style="width:${pct}%;background:${p.color}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ============ RECORD SALE ============
+function recordSale(){
+  const product=document.getElementById('saleProduct').value;
+  const amount=parseFloat(document.getElementById('saleAmount').value);
+  const qty=parseInt(document.getElementById('saleQty').value)||0;
+  const date=document.getElementById('saleDay').value||today();
+  if(!amount||amount<=0){toast('Enter amount in KES','var(--red)');return}
+  if(!qty||qty<=0){toast('Enter pieces sold','var(--red)');return}
+  sales.push({id:uid(),product,amount,qty,date});
+  save('fmp_sales',sales);
+  stock[product]=Math.max(0,(stock[product]||0)-qty);
+  save('fmp_stock',stock);
+  document.getElementById('saleAmount').value='';
+  document.getElementById('saleQty').value='1';
+  toast(`Sale: KES ${amount.toLocaleString()} | ${qty} pc(s) ✓`);
+  render();
+}
+
+// ============ RESTOCK CYCLES ============
+// cycles is a map: {productId: [{...cycle}]}
+
+function getActiveCycle(pid){
+  const arr = cycles[pid]||[];
+  return arr.find(c=>!c.closed)||null;
+}
+
+function getSoldInCycle(pid, cycleStartDate, cycleEndDate){
+  return sales.filter(s=>{
+    if(s.product!==pid) return false;
+    if(s.date < cycleStartDate) return false;
+    if(cycleEndDate && s.date > cycleEndDate) return false;
+    return true;
+  }).reduce((a,s)=>a+(s.qty||0),0);
+}
+
+function closePreviousCycle(pid, closeDate){
+  const arr = cycles[pid]||[];
+  const active = arr.find(c=>!c.closed);
+  if(!active) return 0; // no previous cycle, no carryover
+  const soldInCycle = getSoldInCycle(pid, active.date, closeDate);
+  const remaining = Math.max(0, active.totalQty - soldInCycle);
+  active.closed = true;
+  active.closedDate = closeDate;
+  active.soldQty = soldInCycle;
+  active.remainingQty = remaining;
+  cycles[pid] = arr;
+  save('fmp_cycles', cycles);
+  return remaining; // carry over to new cycle
+}
+
+// ============ RECORD RESTOCK ============
+function recordRestock(){
+  const product=document.getElementById('restockProduct').value;
+  const cost=parseFloat(document.getElementById('restockCost').value);
+  const qty=parseInt(document.getElementById('restockQty').value)||0;
+  const date=document.getElementById('restockDate').value||today();
+  if(!cost||cost<=0){toast('Enter cost in KES','var(--red)');return}
+  if(!qty||qty<=0){toast('Enter pieces received','var(--red)');return}
+
+  // Close previous cycle and get carryover
+  const carriedOver = closePreviousCycle(product, date);
+  const totalQty = qty + carriedOver;
+
+  // Create new cycle
+  if(!cycles[product]) cycles[product]=[];
+  cycles[product].push({
+    id: uid(),
+    product,
+    date,
+    newQty: qty,
+    newCost: cost,
+    carriedOver,
+    totalQty,
+    closed: false
+  });
+  save('fmp_cycles', cycles);
+
+  // Record restock entry as before
+  restocks.push({id:uid(),product,cost,qty,date,carriedOver,totalQty});
+  save('fmp_restocks',restocks);
+
+  // Update stock: add new pieces only (carried over already in stock)
+  stock[product]=(stock[product]||0)+qty;
+  save('fmp_stock',stock);
+
+  document.getElementById('restockCost').value='';
+  document.getElementById('restockQty').value='';
+
+  const msg = carriedOver > 0
+    ? `Restock ✓ | ${qty} new + ${carriedOver} carried = ${totalQty} total`
+    : `Restock: KES ${cost.toLocaleString()} | ${qty} pc(s) ✓`;
+  toast(msg);
+  render();
+}
+
+// ============ PERIOD TABS ============
+function setPeriod(p,btn){
+  currentPeriod=p;
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderSummary();
+}
+
+// ============ SUMMARY ============
+function renderSummary(){
+  const p=currentPeriod;
+  document.getElementById('periodLabel').textContent=periodLabel(p);
+
+  const pSales=sales.filter(s=>inPeriod(s.date,p));
+  const pRestocks=restocks.filter(r=>inPeriod(r.date,p));
+  const pExpenses=expenses.filter(e=>inPeriod(e.date,p));
+
+  const totalSalesAmt=pSales.reduce((a,s)=>a+s.amount,0);
+  const totalSalesPcs=pSales.reduce((a,s)=>a+(s.qty||0),0);
+  const totalRestockAmt=pRestocks.reduce((a,r)=>a+r.cost,0);
+  const totalRestockPcs=pRestocks.reduce((a,r)=>a+(r.qty||0),0);
+  const totalExp=pExpenses.reduce((a,e)=>a+e.amount,0);
+  const net=totalSalesAmt-totalRestockAmt-totalExp;
+
+  document.getElementById('totalsGrid').innerHTML=`
+    <div class="total-card">
+      <div class="t-label">Sales</div>
+      <div class="t-value t-sales">KES ${totalSalesAmt.toLocaleString()}</div>
+      <div class="t-sub">${totalSalesPcs} pcs sold</div>
+    </div>
+    <div class="total-card">
+      <div class="t-label">Restock</div>
+      <div class="t-value t-restock">KES ${totalRestockAmt.toLocaleString()}</div>
+      <div class="t-sub">${totalRestockPcs} pcs received</div>
+    </div>
+    <div class="total-card">
+      <div class="t-label">Expenses</div>
+      <div class="t-value t-expense">KES ${totalExp.toLocaleString()}</div>
+      <div class="t-sub">&nbsp;</div>
+    </div>
+    <div class="total-card">
+      <div class="t-label">Net Profit</div>
+      <div class="t-value ${net>=0?'t-profit':'t-expense'}">KES ${net.toLocaleString()}</div>
+      <div class="t-sub">${net>=0?'▲ Profit':'▼ Loss'}</div>
+    </div>`;
+
+  document.getElementById('productSummaryGrid').innerHTML=products.map(prod=>{
+    const s=getStats(prod.id,p,null);
+    return`<div class="ps-card" style="border-top:2px solid ${prod.color}">
+      <div class="ps-name">${prod.name}</div>
+      <div class="ps-row"><span class="ps-lbl">Sales KES</span><span class="ps-v" style="color:var(--blue)">${s.salesAmt.toLocaleString()}</span></div>
+      <div class="ps-row"><span class="ps-lbl">Pcs Sold</span><span class="ps-v" style="color:var(--blue)">${s.salesPcs}</span></div>
+      <div class="ps-row"><span class="ps-lbl">Restock KES</span><span class="ps-v" style="color:var(--accent2)">${s.restockAmt.toLocaleString()}</span></div>
+      <div class="ps-row"><span class="ps-lbl">Pcs In</span><span class="ps-v" style="color:var(--accent2)">${s.restockPcs}</span></div>
+      <div class="ps-row"><span class="ps-lbl">Profit</span><span class="ps-v" style="color:${s.profit>=0?'var(--green)':'var(--red)'}">${s.profit.toLocaleString()}</span></div>
+      <div class="ps-row"><span class="ps-lbl">In Stock</span><span class="ps-v">${s.curStock} pcs</span></div>
+    </div>`;
+  }).join('');
+
+  // expenses list (show all always for reference)
+  const el=document.getElementById('expList');
+  const filtered=expenses.filter(e=>inPeriod(e.date,p)).slice().reverse();
+  if(!filtered.length){el.innerHTML='<div class="empty"><div class="e-icon">🧾</div>No expenses for this period</div>';return}
+  el.innerHTML=filtered.map(e=>`
+    <div class="exp-item">
+      <div><div style="font-size:13px;font-weight:500">${e.desc}</div><div style="font-size:10px;color:var(--muted)">${fmt(e.date)}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:13px;font-weight:600;color:var(--red)">-KES ${e.amount.toLocaleString()}</span>
+        <button class="exp-del" onclick="deleteExpense('${e.id}')">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function addExpense(){
+  const desc=document.getElementById('expDesc').value.trim();
+  const amount=parseFloat(document.getElementById('expAmount').value);
+  const date=document.getElementById('expDate').value||today();
+  if(!desc||!amount||amount<=0){toast('Fill all fields','var(--red)');return}
+  expenses.push({id:uid(),desc,amount,date});save('fmp_expenses',expenses);
+  document.getElementById('expDesc').value='';document.getElementById('expAmount').value='';
+  toast('Expense added ✓');renderSummary();
+}
+function deleteExpense(id){expenses=expenses.filter(e=>e.id!==id);save('fmp_expenses',expenses);toast('Removed','var(--accent2)');renderSummary();}
+
+// ============ WHATSAPP ============
+function shareWhatsApp(){
+  const p=currentPeriod;
+  const pSales=sales.filter(s=>inPeriod(s.date,p));
+  const pRestocks=restocks.filter(r=>inPeriod(r.date,p));
+  const pExp=expenses.filter(e=>inPeriod(e.date,p));
+  const totalSalesAmt=pSales.reduce((a,s)=>a+s.amount,0);
+  const totalSalesPcs=pSales.reduce((a,s)=>a+(s.qty||0),0);
+  const totalRestockAmt=pRestocks.reduce((a,r)=>a+r.cost,0);
+  const totalExp=pExp.reduce((a,e)=>a+e.amount,0);
+  const net=totalSalesAmt-totalRestockAmt-totalExp;
+  let msg=`*FRANK M PICKS — ${periodLabel(p)}*\n\n`;
+  msg+=`💰 Sales: KES ${totalSalesAmt.toLocaleString()} (${totalSalesPcs} pcs)\n`;
+  msg+=`📦 Restock: KES ${totalRestockAmt.toLocaleString()}\n`;
+  msg+=`🧾 Expenses: KES ${totalExp.toLocaleString()}\n`;
+  msg+=`✅ Net Profit: KES ${net.toLocaleString()}\n\n*Per Product:*\n`;
+  products.forEach(prod=>{
+    const s=getStats(prod.id,p,null);
+    msg+=`👔 ${prod.name}: KES ${s.salesAmt.toLocaleString()} | ${s.salesPcs} sold | ${s.restockPcs} restocked | ${s.curStock} in stock\n`;
+  });
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+
+// ============ STOCK ============
+function renderStock(){
+  document.getElementById('stockList').innerHTML=products.map(prod=>{
+    const allTime=getStats(prod.id,'all',null);
+    const curStock=stock[prod.id]||0;
+    const stockCls=curStock===0?'s-out':curStock<=(prod.minStock||3)?'s-low':'s-ok';
+    const stockLabel=curStock===0?'OUT OF STOCK':curStock<=(prod.minStock||3)?`LOW — ${curStock} left`:`${curStock} in stock`;
+
+    // Current cycle info
+    const activeCycle=getActiveCycle(prod.id);
+    const cycleArr=cycles[prod.id]||[];
+    const prevCycles=cycleArr.filter(c=>c.closed);
+    const lastClosed=prevCycles.length?prevCycles[prevCycles.length-1]:null;
+
+    let cycleHTML='';
+    if(activeCycle){
+      const soldInCycle=getSoldInCycle(prod.id,activeCycle.date,null);
+      const remaining=Math.max(0,activeCycle.totalQty-soldInCycle);
+      const pct2=Math.min(100,Math.round((soldInCycle/Math.max(1,activeCycle.totalQty))*100));
+      cycleHTML=`
+        <div style="background:var(--bg);border-radius:10px;padding:10px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:10px;color:var(--accent);font-weight:700;letter-spacing:1px">CURRENT CYCLE</span>
+            <span style="font-size:9px;color:var(--muted)">${fmt(activeCycle.date)}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;text-align:center;margin-bottom:8px">
+            <div style="background:var(--card);border-radius:7px;padding:6px">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--accent2)">${activeCycle.newQty}</div>
+              <div style="font-size:8px;color:var(--muted)">NEW IN</div>
+            </div>
+            <div style="background:var(--card);border-radius:7px;padding:6px">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--blue)">${activeCycle.carriedOver}</div>
+              <div style="font-size:8px;color:var(--muted)">CARRIED</div>
+            </div>
+            <div style="background:var(--card);border-radius:7px;padding:6px">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--purple)">${activeCycle.totalQty}</div>
+              <div style="font-size:8px;color:var(--muted)">TOTAL</div>
+            </div>
+            <div style="background:var(--card);border-radius:7px;padding:6px">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--green)">${soldInCycle}</div>
+              <div style="font-size:8px;color:var(--muted)">SOLD</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px">
+            <span style="color:var(--muted)">Cycle Progress</span>
+            <span style="color:var(--accent);font-weight:700">${soldInCycle}/${activeCycle.totalQty} pcs (${pct2}%)</span>
+          </div>
+          <div class="mini-bar" style="height:6px"><div class="mini-fill" style="width:${pct2}%;background:${prod.color}"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:6px">
+            <span style="color:var(--muted)">Cycle Cost</span>
+            <span style="color:var(--accent2);font-weight:600">KES ${activeCycle.newCost.toLocaleString()}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:4px">
+            <span style="color:var(--muted)">Remaining</span>
+            <span style="color:${remaining===0?'var(--red)':remaining<=(prod.minStock||3)?'var(--accent)':'var(--green)'};font-weight:600">${remaining} pcs</span>
+          </div>
+        </div>`;
+    } else {
+      cycleHTML=`<div style="background:var(--bg);border-radius:10px;padding:10px;margin-bottom:8px;text-align:center;color:var(--muted);font-size:11px">No active cycle — record a restock to start one</div>`;
+    }
+
+    let lastCycleHTML='';
+    if(lastClosed){
+      lastCycleHTML=`
+        <div style="background:var(--bg);border-radius:10px;padding:10px;margin-bottom:8px;border:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:10px;color:var(--muted);letter-spacing:1px">PREV CYCLE</span>
+            <span style="font-size:9px;color:var(--muted)">${fmt(lastClosed.date)} → ${fmt(lastClosed.closedDate)}</span>
+          </div>
+          <div style="display:flex;gap:10px;font-size:10px">
+            <span>Total: <strong style="color:var(--purple)">${lastClosed.totalQty}pc</strong></span>
+            <span>Sold: <strong style="color:var(--green)">${lastClosed.soldQty||0}pc</strong></span>
+            <span>Carried: <strong style="color:var(--blue)">${lastClosed.remainingQty||0}pc</strong></span>
+          </div>
+        </div>`;
+    }
+
+    const pct=Math.min(100,Math.round((curStock/Math.max(1,(prod.minStock||3)*3))*100));
+    return`<div class="input-panel" style="margin-bottom:10px;border-top:3px solid ${prod.color}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px">${prod.name}</span>
+        <span class="stock-badge ${stockCls}">${stockLabel}</span>
+      </div>
+      <div class="mini-bar" style="height:4px;margin-bottom:12px"><div class="mini-fill" style="width:${pct}%;background:${prod.color}"></div></div>
+      ${cycleHTML}
+      ${lastCycleHTML}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:center">
+        <div style="background:var(--bg);border-radius:8px;padding:8px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--blue)">${allTime.salesAmt.toLocaleString()}</div>
+          <div style="font-size:8px;color:var(--muted)">TOTAL SALES KES</div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:8px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${allTime.profit>=0?'var(--green)':'var(--red)'}">${allTime.profit.toLocaleString()}</div>
+          <div style="font-size:8px;color:var(--muted)">ALL TIME PROFIT</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============ DEBTS ============
+let activeDebtType='given';
+function switchDebtTab(t){activeDebtType=t;document.getElementById('dtab-given').classList.toggle('active',t==='given');document.getElementById('dtab-received').classList.toggle('active',t==='received');renderDebts();}
+function renderDebts(){
+  const el=document.getElementById('debtList');
+  const filtered=debts.filter(d=>d.type===activeDebtType).slice().reverse();
+  if(!filtered.length){el.innerHTML=`<div class="empty"><div class="e-icon">${activeDebtType==='given'?'💸':'🤝'}</div>None yet</div>`;return}
+  el.innerHTML=filtered.map(d=>`
+    <div class="debt-item debt-${d.type}">
+      <div class="debt-header"><span style="font-size:13px;font-weight:600">${d.name}</span><span class="badge-status ${d.paid?'status-paid':'status-pending'}">${d.paid?'PAID':'PENDING'}</span></div>
+      <div class="debt-amount">KES ${d.amount.toLocaleString()}</div>
+      <div class="debt-meta">${fmt(d.date)}</div>
+      ${d.note?`<div class="debt-note">${d.note}</div>`:''}
+      <div class="debt-actions">
+        ${!d.paid?`<button class="badge-paid" onclick="markDebtPaid('${d.id}')">✓ Paid</button>`:''}
+        <button class="badge-del" onclick="deleteDebt('${d.id}')">✕ Delete</button>
+      </div>
+    </div>`).join('');
+}
+function addDebt(){
+  const name=document.getElementById('debtName').value.trim();
+  const amount=parseFloat(document.getElementById('debtAmount').value);
+  const date=document.getElementById('debtDate').value||today();
+  const note=document.getElementById('debtNote').value.trim();
+  const type=document.getElementById('debtType').value;
+  if(!name||!amount||amount<=0){toast('Fill name and amount','var(--red)');return}
+  debts.push({id:uid(),name,amount,date,note,type,paid:false});save('fmp_debts',debts);
+  document.getElementById('debtName').value='';document.getElementById('debtAmount').value='';document.getElementById('debtNote').value='';
+  toast('Debt saved ✓');activeDebtType=type;switchDebtTab(type);render();
+}
+function markDebtPaid(id){const d=debts.find(x=>x.id===id);if(d){d.paid=true;save('fmp_debts',debts);toast('Marked paid ✓');renderDebts();}}
+function deleteDebt(id){debts=debts.filter(d=>d.id!==id);save('fmp_debts',debts);toast('Removed','var(--accent2)');renderDebts();}
+
+// ============ EDIT ============
+let editFilter='all';
+function setEF(f,btn){editFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderEdit();}
+function renderEdit(){
+  const el=document.getElementById('editList');
+  let items=[];
+  if(['all','sale'].includes(editFilter)) sales.forEach(s=>items.push({...s,_cat:'sale'}));
+  if(['all','restock'].includes(editFilter)) restocks.forEach(r=>items.push({...r,_cat:'restock',amount:r.cost}));
+  if(['all','expense'].includes(editFilter)) expenses.forEach(e=>items.push({...e,_cat:'expense'}));
+  if(['all','debt'].includes(editFilter)) debts.forEach(d=>items.push({...d,_cat:'debt'}));
+  items.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(!items.length){el.innerHTML='<div class="empty"><div class="e-icon">✏️</div>No entries found</div>';return}
+  el.innerHTML=items.slice(0,80).map(item=>{
+    const cat=item._cat;
+    const pname=products.find(p=>p.id===item.product)?.name||item.product||'';
+    const title=cat==='expense'?item.desc:cat==='debt'?item.name:pname;
+    const amt=cat==='restock'?item.cost:item.amount||0;
+    return`<div class="edit-item">
+      <div class="edit-top">
+        <div><div class="edit-title">${title}</div><div class="edit-meta">${fmt(item.date||'')}${cat==='sale'||cat==='restock'?' · '+cat:''}</div></div>
+        <span class="type-badge type-${cat}">${cat.toUpperCase()}</span>
+      </div>
+      <div class="edit-vals">
+        <div class="edit-val"><div class="ev-lbl">KES</div><div class="ev-txt">${amt.toLocaleString()}</div></div>
+        ${cat==='sale'?`<div class="edit-val"><div class="ev-lbl">Pcs Sold</div><div class="ev-txt">${item.qty||0}</div></div>`:''}
+        ${cat==='restock'?`<div class="edit-val"><div class="ev-lbl">Pcs In</div><div class="ev-txt">${item.qty||0}</div></div>`:''}
+        ${cat==='debt'?`<div class="edit-val"><div class="ev-lbl">Status</div><div class="ev-txt">${item.paid?'Paid':'Pending'}</div></div>`:''}
+      </div>
+      <div class="edit-actions">
+        <button class="btn-edit" onclick="openEditModal('${item.id}','${cat}')">✎ EDIT</button>
+        <button class="btn-del" onclick="deleteEntry('${item.id}','${cat}')">✕ DELETE</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteEntry(id,cat){
+  if(cat==='sale'){sales=sales.filter(s=>s.id!==id);save('fmp_sales',sales);}
+  else if(cat==='restock'){restocks=restocks.filter(r=>r.id!==id);save('fmp_restocks',restocks);}
+  else if(cat==='expense'){expenses=expenses.filter(e=>e.id!==id);save('fmp_expenses',expenses);}
+  else if(cat==='debt'){debts=debts.filter(d=>d.id!==id);save('fmp_debts',debts);}
+  toast('Deleted','var(--accent2)');render();
+}
+
+function openEditModal(id,cat){
+  document.getElementById('editId').value=id;
+  document.getElementById('editCategory').value=cat;
+  let item,html='';
+  if(cat==='sale') item=sales.find(s=>s.id===id);
+  else if(cat==='restock') item=restocks.find(r=>r.id===id);
+  else if(cat==='expense') item=expenses.find(e=>e.id===id);
+  else item=debts.find(d=>d.id===id);
+  if(!item)return;
+  const amt=cat==='restock'?item.cost:item.amount||0;
+  if(cat==='sale'){
+    html=`<div class="form-row"><div class="form-group"><label>Amount (KES)</label><input type="number" id="mAmount" value="${amt}"/></div><div class="form-group"><label>Pieces Sold</label><input type="number" id="mQty" value="${item.qty||0}"/></div></div>
+    <div class="form-row full"><div class="form-group"><label>Date</label><input type="date" id="mDate" value="${item.date}"/></div></div>`;
+  } else if(cat==='restock'){
+    html=`<div class="form-row"><div class="form-group"><label>Cost (KES)</label><input type="number" id="mAmount" value="${amt}"/></div><div class="form-group"><label>Pieces Received</label><input type="number" id="mQty" value="${item.qty||0}"/></div></div>
+    <div class="form-row full"><div class="form-group"><label>Date</label><input type="date" id="mDate" value="${item.date}"/></div></div>`;
+  } else if(cat==='expense'){
+    html=`<div class="form-row full"><div class="form-group"><label>Description</label><input type="text" id="mDesc" value="${item.desc}"/></div></div>
+    <div class="form-row"><div class="form-group"><label>Amount (KES)</label><input type="number" id="mAmount" value="${amt}"/></div><div class="form-group"><label>Date</label><input type="date" id="mDate" value="${item.date}"/></div></div>`;
+  } else {
+    html=`<div class="form-row full"><div class="form-group"><label>Name</label><input type="text" id="mName" value="${item.name}"/></div></div>
+    <div class="form-row"><div class="form-group"><label>Amount (KES)</label><input type="number" id="mAmount" value="${amt}"/></div><div class="form-group"><label>Date</label><input type="date" id="mDate" value="${item.date}"/></div></div>
+    <div class="form-row full"><div class="form-group"><label>Note</label><input type="text" id="mNote" value="${item.note||''}"/></div></div>`;
+  }
+  document.getElementById('editModalBody').innerHTML=html;
+  document.getElementById('editModal').classList.add('open');
+}
+function closeModal(){document.getElementById('editModal').classList.remove('open');}
+function saveEdit(){
+  const id=document.getElementById('editId').value;
+  const cat=document.getElementById('editCategory').value;
+  const amount=parseFloat(document.getElementById('mAmount')?.value)||0;
+  const date=document.getElementById('mDate')?.value||today();
+  if(cat==='sale'){
+    const item=sales.find(s=>s.id===id);
+    if(item){item.amount=amount;item.qty=parseInt(document.getElementById('mQty')?.value)||0;item.date=date;}
+    save('fmp_sales',sales);
+  } else if(cat==='restock'){
+    const item=restocks.find(r=>r.id===id);
+    if(item){item.cost=amount;item.qty=parseInt(document.getElementById('mQty')?.value)||0;item.date=date;}
+    save('fmp_restocks',restocks);
+  } else if(cat==='expense'){
+    const item=expenses.find(e=>e.id===id);
+    if(item){item.desc=document.getElementById('mDesc')?.value||item.desc;item.amount=amount;item.date=date;}
+    save('fmp_expenses',expenses);
+  } else {
+    const item=debts.find(d=>d.id===id);
+    if(item){item.name=document.getElementById('mName')?.value||item.name;item.amount=amount;item.date=date;item.note=document.getElementById('mNote')?.value||'';}
+    save('fmp_debts',debts);
+  }
+  closeModal();toast('Updated ✓');render();
+}
+
+// ============ SETTINGS ============
+function renderProductManage(){
+  document.getElementById('productManageList').innerHTML=products.map(p=>`
+    <div class="product-manage-item">
+      <div><span class="pm-color" style="background:${p.color}"></span><span style="font-size:13px;font-weight:600">${p.name}</span></div>
+      <button class="pm-del" onclick="removeProduct('${p.id}')">Remove</button>
+    </div>`).join('');
+}
+function addProduct(){
+  const name=document.getElementById('newProductName').value.trim();
+  const color=document.getElementById('newProductColor').value;
+  const minStock=parseInt(document.getElementById('newProductMin').value)||3;
+  if(!name){toast('Enter a product name','var(--red)');return}
+  const id='p'+Date.now();
+  products.push({id,name,color,minStock});save('fmp_products',products);
+  document.getElementById('newProductName').value='';
+  toast(name+' added ✓');render();
+}
+function removeProduct(id){
+  if(products.length<=1){toast('Need at least 1 product','var(--red)');return}
+  products=products.filter(p=>p.id!==id);save('fmp_products',products);
+  toast('Removed','var(--accent2)');render();
+}
+function setTheme(t){
+  const themes={gold:{accent:'#f0c040',accent2:'#e06030'},green:{accent:'#00e676',accent2:'#00bcd4'},blue:{accent:'#4da6ff',accent2:'#a78bfa'},red:{accent:'#ff5252',accent2:'#ff80ab'}};
+  const th=themes[t];
+  document.documentElement.style.setProperty('--accent',th.accent);
+  document.documentElement.style.setProperty('--accent2',th.accent2);
+  save('fmp_theme',t);
+  document.querySelectorAll('.theme-opt').forEach(o=>o.classList.remove('active'));
+  document.getElementById('theme-'+t)?.classList.add('active');
+  toast('Theme updated ✓');
+}
+function loadTheme(){
+  const t=load('fmp_theme','gold');
+  if(t!=='gold')setTheme(t);
+  document.querySelectorAll('.theme-opt').forEach(o=>o.classList.remove('active'));
+  document.getElementById('theme-'+t)?.classList.add('active');
+}
+function exportCSV(){
+  const rows=[['Date','Product','Type','Amount KES','Pieces']];
+  sales.forEach(s=>rows.push([s.date,products.find(p=>p.id===s.product)?.name||s.product,'sale',s.amount,s.qty||0]));
+  restocks.forEach(r=>rows.push([r.date,products.find(p=>p.id===r.product)?.name||r.product,'restock',r.cost,r.qty||0]));
+  expenses.forEach(e=>rows.push([e.date,e.desc,'expense',e.amount,'']));
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv,'+encodeURIComponent(csv);
+  a.download='frankmpicks-data.csv';a.click();
+  toast('CSV downloaded ✓');
+}
+
+// ============ AI ============
+let chatHistory=[];
+function usePrompt(txt){document.getElementById('aiPrompt').value=txt;document.getElementById('aiPrompt').focus();}
+function clearChat(){chatHistory=[];document.getElementById('chatWindow').innerHTML='';document.getElementById('aiPrompt').value='';}
+function addMsg(role,html){
+  const w=document.getElementById('chatWindow');
+  const d=document.createElement('div');d.className=role==='user'?'msg msg-user':'msg msg-ai';d.innerHTML=html;
+  if(role==='ai'){const btn=document.createElement('button');btn.className='ai-copy-btn';btn.textContent='Copy';btn.onclick=()=>{navigator.clipboard.writeText(d.innerText).then(()=>toast('Copied ✓'))};d.appendChild(btn);}
+  w.appendChild(d);w.scrollTop=w.scrollHeight;return d;
+}
+function addThinking(){
+  const w=document.getElementById('chatWindow');
+  const d=document.createElement('div');d.className='msg msg-thinking';
+  d.innerHTML='Thinking<span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>';
+  w.appendChild(d);w.scrollTop=w.scrollHeight;return d;
+}
+function fmtAI(text){
+  return text.replace(/```([\s\S]*?)```/g,'<pre style="background:var(--bg);padding:8px;border-radius:6px;font-size:11px;overflow-x:auto;margin:6px 0;white-space:pre-wrap;color:var(--blue)">$1</pre>').replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--accent)">$1</strong>').replace(/\n/g,'<br/>');
+}
+const KB=[
+  {keys:['new product','add product','skirt','trouser','dress'],answer:`Go to **⚙️ Settings** → Products section → enter name, pick color & low stock number → tap **ADD PRODUCT**. No code needed!`},
+  {keys:['remove product','delete product'],answer:`Go to **⚙️ Settings** → Products → tap **Remove** next to the product you want to delete.`},
+  {keys:['fix','wrong','edit','mistake','error','correct'],answer:`Go to the **✏️ Edit tab** → filter by Sales, Restock, Expenses or Debts → tap **EDIT** to correct or **DELETE** to remove it.`},
+  {keys:['whatsapp','share'],answer:`Go to **📊 Summary** → select your period (Today/Week/Month/Year) → tap **SHARE ON WHATSAPP**.`},
+  {keys:['export','csv','download'],answer:`Go to **⚙️ Settings** → tap **EXPORT ALL DATA (CSV)**.`},
+  {keys:['theme','color','change color'],answer:`Go to **⚙️ Settings** → App Theme → tap Gold, Green, Blue or Red.`},
+  {keys:['stock','pieces','inventory'],answer:`**📦 Stock tab** shows Restocked / Sold / In Stock per product with KES spent vs earned. Sales auto-deduct stock. Restocks auto-add.`},
+  {keys:['summary','period','weekly','monthly','yearly'],answer:`**📊 Summary tab** has 5 period buttons: TODAY, WEEK, MONTH, YEAR, ALL TIME. Tap any to see full totals and per-product breakdown for that period.`},
+  {keys:['price','independent','different price'],answer:`Each sale entry has its own **Amount (KES)** and **Pieces** fields — they are completely independent. You can sell 1 blazer for KES 800 and another for KES 1200, each recorded separately.`},
+];
+function smartReply(prompt){
+  const p=prompt.toLowerCase();
+  if(/^(hi|hello|hey|good|sasa|habari|hujambo)/.test(p)) return`Habari Frank! 👋\n\nI'm your offline assistant. Here's what I can help with:\n- **Record sales** → Products tab (KES + pieces independently)\n- **Record restocks** → Products tab\n- **View by day/week/month/year** → Summary tab\n- **Check stock levels** → Stock tab\n- **Fix wrong entries** → Edit tab\n- **Add/remove products** → Settings\n- **Share report** → Summary → WhatsApp\n\nWhat do you need?`;
+  if(/total|profit|sales|how much|my data|how.*doing/.test(p)){
+    const totalSalesAmt=sales.reduce((a,s)=>a+s.amount,0);
+    const totalSalesPcs=sales.reduce((a,s)=>a+(s.qty||0),0);
+    const totalRestockAmt=restocks.reduce((a,r)=>a+r.cost,0);
+    const totalExp=expenses.reduce((a,e)=>a+e.amount,0);
+    const todayAmt=sales.filter(s=>s.date===today()).reduce((a,s)=>a+s.amount,0);
+    const todayPcs=sales.filter(s=>s.date===today()).reduce((a,s)=>a+(s.qty||0),0);
+    const net=totalSalesAmt-totalRestockAmt-totalExp;
+    return`Your live business data:\n\n**Today:** KES ${todayAmt.toLocaleString()} (${todayPcs} pcs)\n**Total Sales:** KES ${totalSalesAmt.toLocaleString()} | ${totalSalesPcs} pcs\n**Total Restock:** KES ${totalRestockAmt.toLocaleString()}\n**Total Expenses:** KES ${totalExp.toLocaleString()}\n**Net Profit:** KES ${net.toLocaleString()}\n\n${net>=0?'📈 In profit — well done!':'📉 Currently at a loss — keep pushing sales!'}`;
+  }
+  for(const item of KB){if(item.keys.some(k=>p.includes(k)))return item.answer;}
+  return`I understand you want: **"${prompt}"**\n\nFor that specific request, come to **claude.ai** and say:\n*"I have a FRANK M PICKS app and I want to ${prompt}"*\nI'll give you the exact code or steps. 😊`;
+}
+function sendToAI(){
+  const prompt=document.getElementById('aiPrompt').value.trim();
+  if(!prompt){toast('Type something first','var(--red)');return;}
+  addMsg('user',prompt);document.getElementById('aiPrompt').value='';
+  const thinking=addThinking();
+  setTimeout(()=>{thinking.remove();addMsg('ai',fmtAI(smartReply(prompt)));},500);
+}
+
+// ============ INIT ============
+function scheduleReminder(){
+  const now=new Date(),next=new Date();next.setHours(21,0,0,0);
+  if(next<=now)next.setDate(next.getDate()+1);
+  setTimeout(()=>{if(Notification.permission==='granted')new Notification('FRANK M PICKS',{body:'Daily sales reminder! 📊'});scheduleReminder();},next-now);
+}
+if('Notification' in window)Notification.requestPermission().then(()=>scheduleReminder());
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+document.addEventListener('DOMContentLoaded',()=>{
+  const ta=document.getElementById('aiPrompt');
+  if(ta)ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendToAI();}});
+});
+document.getElementById('expDate').value=today();
+document.getElementById('debtDate').value=today();
+document.getElementById('restockDate').value=today();
+loadTheme();
+render();
+</script>
+</body>
+</html>
