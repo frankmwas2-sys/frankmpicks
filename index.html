@@ -244,19 +244,31 @@ select option{background:var(--surface)}
 <!-- TAB: SUMMARY -->
 <div class="tab" id="tab-summary">
   <div class="section-title">Summary</div>
-  <div class="period-tabs">
-    <div class="ptab active" id="ptab-today" onclick="setPeriod('today',this)">TODAY</div>
-    <div class="ptab" id="ptab-week" onclick="setPeriod('week',this)">WEEK</div>
-    <div class="ptab" id="ptab-month" onclick="setPeriod('month',this)">MONTH</div>
-    <div class="ptab" id="ptab-year" onclick="setPeriod('year',this)">YEAR</div>
-    <div class="ptab" id="ptab-all" onclick="setPeriod('all',this)">ALL TIME</div>
-  </div>
-  <div class="period-label" id="periodLabel"></div>
-  <div class="totals-grid" id="totalsGrid"></div>
-  <div class="section-title" style="font-size:16px;margin-bottom:10px">Per Product</div>
-  <div class="product-summary-grid" id="productSummaryGrid"></div>
-  <button class="btn btn-wa" style="margin-bottom:14px" onclick="shareWhatsApp()">📲 SHARE ON WHATSAPP</button>
-  <div class="section-title" style="font-size:16px;margin-bottom:10px">Expenses</div>
+
+  <!-- CYCLE OVERVIEW -->
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--accent);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">CYCLE OVERVIEW</div>
+  <div id="cycleOverviewList"></div>
+
+  <!-- COST RECOVERY -->
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--accent);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:20px">COST RECOVERY</div>
+  <div id="costRecoveryList"></div>
+
+  <!-- PROFIT SUMMARY -->
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--accent);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:20px">PROFIT SUMMARY</div>
+  <div id="profitSummaryBlock"></div>
+  <button class="btn btn-accent" style="margin-bottom:14px" onclick="togglePastCycles()">📋 VIEW PAST CYCLES</button>
+  <div id="pastCyclesBlock" style="display:none"></div>
+
+  <!-- RESTOCK HISTORY -->
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--accent);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:20px">RESTOCK HISTORY</div>
+  <div id="restockHistoryFilter" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap"></div>
+  <div id="restockHistoryList"></div>
+
+  <!-- WHATSAPP -->
+  <button class="btn btn-wa" style="margin-top:10px;margin-bottom:14px" onclick="shareWhatsApp()">📲 SHARE ON WHATSAPP</button>
+
+  <!-- EXPENSES -->
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--accent);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:10px">EXPENSES</div>
   <div class="input-panel">
     <h3>Add Expense</h3>
     <div class="form-row full"><div class="form-group"><label>Description</label><input type="text" id="expDesc" placeholder="e.g. Transport, Packaging…"/></div></div>
@@ -267,13 +279,6 @@ select option{background:var(--surface)}
     <button class="btn btn-danger" onclick="addExpense()">ADD EXPENSE</button>
   </div>
   <div class="exp-list" id="expList"></div>
-</div>
-
-<!-- TAB: STOCK -->
-<div class="tab" id="tab-stock">
-  <div class="section-title">Stock</div>
-  <div class="section-sub">Pieces restocked vs sold per product</div>
-  <div id="stockList"></div>
 </div>
 
 <!-- TAB: DEBTS -->
@@ -378,7 +383,6 @@ select option{background:var(--surface)}
 <nav class="bottom-nav">
   <button class="nav-btn active" id="nav-products" onclick="switchTab('products')"><span class="icon">👔</span>Products<div class="nav-dot"></div></button>
   <button class="nav-btn" id="nav-summary" onclick="switchTab('summary')"><span class="icon">📊</span>Summary<div class="nav-dot"></div></button>
-  <button class="nav-btn" id="nav-stock" onclick="switchTab('stock')"><span class="icon">📦</span>Stock<div class="nav-dot"></div></button>
   <button class="nav-btn" id="nav-debts" onclick="switchTab('debts')"><span class="icon">💳</span>Debts<div class="nav-dot"></div></button>
   <button class="nav-btn" id="nav-edit" onclick="switchTab('edit')"><span class="icon">✏️</span>Edit<div class="nav-dot"></div></button>
   <button class="nav-btn" id="nav-ai" onclick="switchTab('ai')"><span class="icon">🤖</span>AI<div class="nav-dot"></div></button>
@@ -480,7 +484,6 @@ function render(){
   renderWeekStrip();
   renderProducts();
   renderSummary();
-  renderStock();
   renderDebts();
   renderEdit();
   renderProductManage();
@@ -688,70 +691,271 @@ function recordRestock(){
   render();
 }
 
-// ============ PERIOD TABS ============
-function setPeriod(p,btn){
-  currentPeriod=p;
-  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');
-  renderSummary();
+// ============ SUMMARY (REBUILT) ============
+let restockHistoryFilter = 'all';
+let pastCyclesVisible = false;
+
+function togglePastCycles(){
+  pastCyclesVisible = !pastCyclesVisible;
+  document.getElementById('pastCyclesBlock').style.display = pastCyclesVisible ? 'block' : 'none';
+  document.querySelector('[onclick="togglePastCycles()"]').textContent = pastCyclesVisible ? '📋 HIDE PAST CYCLES' : '📋 VIEW PAST CYCLES';
+  if(pastCyclesVisible) renderPastCycles();
 }
 
-// ============ SUMMARY ============
 function renderSummary(){
-  const p=currentPeriod;
-  document.getElementById('periodLabel').textContent=periodLabel(p);
+  renderCycleOverview();
+  renderCostRecovery();
+  renderProfitSummary();
+  renderRestockHistory();
+  renderExpenses();
+}
 
-  const pSales=sales.filter(s=>inPeriod(s.date,p));
-  const pRestocks=restocks.filter(r=>inPeriod(r.date,p));
-  const pExpenses=expenses.filter(e=>inPeriod(e.date,p));
+function renderCycleOverview(){
+  const el = document.getElementById('cycleOverviewList');
+  if(!el) return;
+  el.innerHTML = products.map(prod => {
+    const activeCycle = getActiveCycle(prod.id);
+    if(!activeCycle){
+      return `<div class="input-panel" style="margin-bottom:10px;border-top:3px solid ${prod.color}">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;margin-bottom:6px">${prod.name}</div>
+        <div style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0">No active cycle — record a restock to begin</div>
+      </div>`;
+    }
+    const soldInCycle = getSoldInCycle(prod.id, activeCycle.date, null);
+    const remaining = Math.max(0, activeCycle.totalQty - soldInCycle);
+    const daysSinceRestock = Math.floor((new Date() - new Date(activeCycle.date)) / 86400000);
+    const sellRate = daysSinceRestock > 0 ? soldInCycle / daysSinceRestock : 0;
+    const daysLeft = sellRate > 0 ? Math.ceil(remaining / sellRate) : (remaining > 0 ? 99 : 0);
+    const totalDays = daysSinceRestock + daysLeft;
+    const pct = Math.min(100, Math.round((daysSinceRestock / Math.max(1, totalDays)) * 100));
+    const urgency = daysLeft <= 2 ? 'var(--red)' : daysLeft <= 5 ? 'var(--accent)' : 'var(--green)';
+    const urgencyLabel = daysLeft <= 2 ? '🔴 RESTOCK SOON' : daysLeft <= 5 ? '🟡 PLAN AHEAD' : '🟢 STOCK OK';
+    const restockDate = new Date(activeCycle.date);
+    const projectedOut = new Date(Date.now() + daysLeft * 86400000);
 
-  const totalSalesAmt=pSales.reduce((a,s)=>a+s.amount,0);
-  const totalSalesPcs=pSales.reduce((a,s)=>a+(s.qty||0),0);
-  const totalRestockAmt=pRestocks.reduce((a,r)=>a+r.cost,0);
-  const totalRestockPcs=pRestocks.reduce((a,r)=>a+(r.qty||0),0);
-  const totalExp=pExpenses.reduce((a,e)=>a+e.amount,0);
-  const net=totalSalesAmt-totalRestockAmt-totalExp;
-
-  document.getElementById('totalsGrid').innerHTML=`
-    <div class="total-card">
-      <div class="t-label">Sales</div>
-      <div class="t-value t-sales">KES ${totalSalesAmt.toLocaleString()}</div>
-      <div class="t-sub">${totalSalesPcs} pcs sold</div>
-    </div>
-    <div class="total-card">
-      <div class="t-label">Restock</div>
-      <div class="t-value t-restock">KES ${totalRestockAmt.toLocaleString()}</div>
-      <div class="t-sub">${totalRestockPcs} pcs received</div>
-    </div>
-    <div class="total-card">
-      <div class="t-label">Expenses</div>
-      <div class="t-value t-expense">KES ${totalExp.toLocaleString()}</div>
-      <div class="t-sub">&nbsp;</div>
-    </div>
-    <div class="total-card">
-      <div class="t-label">Net Profit</div>
-      <div class="t-value ${net>=0?'t-profit':'t-expense'}">KES ${net.toLocaleString()}</div>
-      <div class="t-sub">${net>=0?'▲ Profit':'▼ Loss'}</div>
-    </div>`;
-
-  document.getElementById('productSummaryGrid').innerHTML=products.map(prod=>{
-    const s=getStats(prod.id,p,null);
-    return`<div class="ps-card" style="border-top:2px solid ${prod.color}">
-      <div class="ps-name">${prod.name}</div>
-      <div class="ps-row"><span class="ps-lbl">Sales KES</span><span class="ps-v" style="color:var(--blue)">${s.salesAmt.toLocaleString()}</span></div>
-      <div class="ps-row"><span class="ps-lbl">Pcs Sold</span><span class="ps-v" style="color:var(--blue)">${s.salesPcs}</span></div>
-      <div class="ps-row"><span class="ps-lbl">Restock KES</span><span class="ps-v" style="color:var(--accent2)">${s.restockAmt.toLocaleString()}</span></div>
-      <div class="ps-row"><span class="ps-lbl">Pcs In</span><span class="ps-v" style="color:var(--accent2)">${s.restockPcs}</span></div>
-      <div class="ps-row"><span class="ps-lbl">Profit</span><span class="ps-v" style="color:${s.profit>=0?'var(--green)':'var(--red)'}">${s.profit.toLocaleString()}</span></div>
-      <div class="ps-row"><span class="ps-lbl">In Stock</span><span class="ps-v">${s.curStock} pcs</span></div>
+    return `<div class="input-panel" style="margin-bottom:10px;border-top:3px solid ${prod.color}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px">${prod.name}</span>
+        <span style="font-size:10px;font-weight:700;color:${urgency}">${urgencyLabel}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px">
+        <span style="color:var(--muted)">Started: ${fmt(activeCycle.date)}</span>
+        <span style="color:var(--muted)">Day ${daysSinceRestock + 1}</span>
+      </div>
+      <div class="mini-bar" style="height:7px;margin-bottom:8px">
+        <div class="mini-fill" style="width:${pct}%;background:${prod.color}"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-bottom:8px">
+        <div style="background:var(--bg);border-radius:8px;padding:7px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--blue)">${daysSinceRestock}</div>
+          <div style="font-size:8px;color:var(--muted)">DAYS IN</div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:7px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${urgency}">${daysLeft === 99 ? '—' : daysLeft}</div>
+          <div style="font-size:8px;color:var(--muted)">DAYS LEFT</div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:7px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--green)">${remaining}</div>
+          <div style="font-size:8px;color:var(--muted)">PCS LEFT</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px">
+        <span style="color:var(--muted)">Sell rate: <strong style="color:var(--text)">${sellRate.toFixed(1)} pcs/day</strong></span>
+        <span style="color:var(--muted)">Out ~<strong style="color:${urgency}">${daysLeft === 99 ? 'unknown' : fmt(projectedOut.toISOString().split('T')[0])}</strong></span>
+      </div>
     </div>`;
   }).join('');
+}
 
-  // expenses list (show all always for reference)
-  const el=document.getElementById('expList');
-  const filtered=expenses.filter(e=>inPeriod(e.date,p)).slice().reverse();
-  if(!filtered.length){el.innerHTML='<div class="empty"><div class="e-icon">🧾</div>No expenses for this period</div>';return}
-  el.innerHTML=filtered.map(e=>`
+function renderCostRecovery(){
+  const el = document.getElementById('costRecoveryList');
+  if(!el) return;
+  el.innerHTML = products.map(prod => {
+    const activeCycle = getActiveCycle(prod.id);
+    // Get carried debt from previous closed cycles
+    const allCycles = cycles[prod.id] || [];
+    const closedCycles = allCycles.filter(c => c.closed);
+    let carriedDebt = 0;
+    closedCycles.forEach(c => {
+      const rev = getSoldInCycle(prod.id, c.date, c.closedDate) * getAvgPrice(prod.id);
+      const unrecovered = Math.max(0, c.newCost - rev);
+      carriedDebt += unrecovered;
+    });
+
+    if(!activeCycle){
+      return `<div class="input-panel" style="margin-bottom:10px;border-top:3px solid ${prod.color}">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;margin-bottom:6px">${prod.name}</div>
+        <div style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0">No active cycle</div>
+      </div>`;
+    }
+
+    const soldInCycle = getSoldInCycle(prod.id, activeCycle.date, null);
+    const avgPrice = getAvgPrice(prod.id);
+    const recovered = soldInCycle * avgPrice;
+    const totalToRecover = activeCycle.newCost + carriedDebt;
+    const pct = Math.min(100, Math.round((recovered / Math.max(1, totalToRecover)) * 100));
+    const pureProft = Math.max(0, recovered - totalToRecover);
+    const stillNeeded = Math.max(0, totalToRecover - recovered);
+    const statusColor = pct >= 100 ? 'var(--green)' : pct >= 50 ? 'var(--accent)' : 'var(--red)';
+    const statusLabel = pct >= 100 ? '✅ PROFIT MODE' : pct >= 50 ? '🟡 IN PROGRESS' : '🔴 NOT STARTED';
+
+    return `<div class="input-panel" style="margin-bottom:10px;border-top:3px solid ${prod.color}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px">${prod.name}</span>
+        <span style="font-size:10px;font-weight:700;color:${statusColor}">${statusLabel}</span>
+      </div>
+      ${carriedDebt > 0 ? `<div style="background:#ff555518;border:1px solid #ff555530;border-radius:8px;padding:7px 10px;margin-bottom:8px;font-size:10px;color:var(--red)">⚠️ Carried debt from prev cycle: <strong>KES ${Math.round(carriedDebt).toLocaleString()}</strong></div>` : ''}
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+        <span style="color:var(--muted)">Total to recover</span>
+        <span style="font-weight:600;color:var(--accent2)">KES ${Math.round(totalToRecover).toLocaleString()}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px">
+        <span style="color:var(--muted)">Recovered so far</span>
+        <span style="font-weight:600;color:var(--green)">KES ${Math.round(recovered).toLocaleString()}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px">
+        <span style="color:var(--muted)">Progress</span>
+        <span style="font-weight:700;color:${statusColor}">${pct}%</span>
+      </div>
+      <div class="mini-bar" style="height:8px;margin-bottom:8px">
+        <div class="mini-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':prod.color}"></div>
+      </div>
+      ${pct >= 100
+        ? `<div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--muted)">Pure Profit</span><span style="font-weight:700;color:var(--green)">+KES ${Math.round(pureProft).toLocaleString()}</span></div>`
+        : `<div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--muted)">Still needed</span><span style="font-weight:700;color:var(--red)">KES ${Math.round(stillNeeded).toLocaleString()}</span></div>`
+      }
+    </div>`;
+  }).join('');
+}
+
+function getAvgPrice(pid){
+  const prodSales = sales.filter(s => s.product === pid && s.qty > 0);
+  if(!prodSales.length) return 0;
+  const totalAmt = prodSales.reduce((a,s) => a + s.amount, 0);
+  const totalQty = prodSales.reduce((a,s) => a + (s.qty||0), 0);
+  return totalQty > 0 ? totalAmt / totalQty : 0;
+}
+
+function renderProfitSummary(){
+  const el = document.getElementById('profitSummaryBlock');
+  if(!el) return;
+  // This cycle profit = all sales from active cycles - their restock costs
+  let thisCycleRevenue = 0;
+  let thisCycleCost = 0;
+  products.forEach(prod => {
+    const activeCycle = getActiveCycle(prod.id);
+    if(activeCycle){
+      const sold = getSoldInCycle(prod.id, activeCycle.date, null);
+      thisCycleRevenue += sold * getAvgPrice(prod.id);
+      thisCycleCost += activeCycle.newCost;
+    }
+  });
+  const thisCycleProfit = thisCycleRevenue - thisCycleCost;
+  const allTimeProfit = products.reduce((a, prod) => a + getStats(prod.id, 'all', null).profit, 0);
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="total-card">
+        <div class="t-label">This Cycle</div>
+        <div class="t-value ${thisCycleProfit>=0?'t-profit':'t-expense'}">KES ${Math.round(thisCycleProfit).toLocaleString()}</div>
+        <div class="t-sub">${thisCycleProfit>=0?'▲ Profit':'▼ Loss'}</div>
+      </div>
+      <div class="total-card">
+        <div class="t-label">All Time</div>
+        <div class="t-value ${allTimeProfit>=0?'t-profit':'t-expense'}">KES ${Math.round(allTimeProfit).toLocaleString()}</div>
+        <div class="t-sub">${allTimeProfit>=0?'▲ Total Profit':'▼ Total Loss'}</div>
+      </div>
+    </div>`;
+}
+
+function renderPastCycles(){
+  const el = document.getElementById('pastCyclesBlock');
+  if(!el) return;
+  let html = '';
+  products.forEach(prod => {
+    const allCycles = (cycles[prod.id] || []).filter(c => c.closed).slice().reverse();
+    if(!allCycles.length) return;
+    html += `<div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;color:var(--accent);margin:12px 0 6px;border-bottom:1px solid var(--border);padding-bottom:4px">${prod.name}</div>`;
+    allCycles.forEach(c => {
+      const rev = (c.soldQty || 0) * getAvgPrice(prod.id);
+      const profit = rev - c.newCost;
+      html += `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid ${prod.color}">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:8px">
+          <span>${fmt(c.date)} → ${fmt(c.closedDate)}</span>
+          <span style="color:${profit>=0?'var(--green)':'var(--red)'};font-weight:700">${profit>=0?'+':''}KES ${Math.round(profit).toLocaleString()}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;text-align:center">
+          <div style="background:var(--bg);border-radius:6px;padding:5px">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--accent2)">${c.totalQty}</div>
+            <div style="font-size:8px;color:var(--muted)">TOTAL</div>
+          </div>
+          <div style="background:var(--bg);border-radius:6px;padding:5px">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--green)">${c.soldQty||0}</div>
+            <div style="font-size:8px;color:var(--muted)">SOLD</div>
+          </div>
+          <div style="background:var(--bg);border-radius:6px;padding:5px">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--blue)">${c.remainingQty||0}</div>
+            <div style="font-size:8px;color:var(--muted)">CARRIED</div>
+          </div>
+          <div style="background:var(--bg);border-radius:6px;padding:5px">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--accent)">${c.newCost.toLocaleString()}</div>
+            <div style="font-size:8px;color:var(--muted)">COST</div>
+          </div>
+        </div>
+      </div>`;
+    });
+  });
+  if(!html) html = '<div class="empty"><div class="e-icon">📋</div>No past cycles yet</div>';
+  el.innerHTML = html;
+}
+
+function renderRestockHistory(){
+  const filterEl = document.getElementById('restockHistoryFilter');
+  const listEl = document.getElementById('restockHistoryList');
+  if(!filterEl || !listEl) return;
+
+  // Build filter buttons
+  filterEl.innerHTML = `<button class="filter-btn ${restockHistoryFilter==='all'?'active':''}" onclick="setRHFilter('all')">All</button>` +
+    products.map(p => `<button class="filter-btn ${restockHistoryFilter===p.id?'active':''}" onclick="setRHFilter('${p.id}')">${p.name}</button>`).join('');
+
+  const filtered = restocks.filter(r => restockHistoryFilter === 'all' || r.product === restockHistoryFilter)
+    .slice().sort((a,b) => b.date.localeCompare(a.date));
+
+  if(!filtered.length){
+    listEl.innerHTML = '<div class="empty"><div class="e-icon">📦</div>No restock records yet</div>';
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(r => {
+    const prod = products.find(p => p.id === r.product);
+    const carried = r.carriedOver || 0;
+    const total = r.totalQty || r.qty;
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid ${prod?.color||'var(--accent)'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px">${prod?.name||r.product}</span>
+        <span style="font-size:10px;color:var(--muted)">${fmt(r.date)}</span>
+      </div>
+      <div style="display:flex;gap:10px;font-size:11px;flex-wrap:wrap">
+        <span style="color:var(--accent2)">New: <strong>${r.qty}pc</strong></span>
+        ${carried > 0 ? `<span style="color:var(--blue)">Carried: <strong>+${carried}pc</strong></span>` : ''}
+        <span style="color:var(--purple)">Total: <strong>${total}pc</strong></span>
+        <span style="color:var(--accent)">Cost: <strong>KES ${r.cost.toLocaleString()}</strong></span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setRHFilter(id){
+  restockHistoryFilter = id;
+  renderRestockHistory();
+}
+
+function renderExpenses(){
+  const el = document.getElementById('expList');
+  if(!el) return;
+  const filtered = expenses.slice().reverse();
+  if(!filtered.length){el.innerHTML='<div class="empty"><div class="e-icon">🧾</div>No expenses yet</div>';return}
+  el.innerHTML = filtered.map(e=>`
     <div class="exp-item">
       <div><div style="font-size:13px;font-weight:500">${e.desc}</div><div style="font-size:10px;color:var(--muted)">${fmt(e.date)}</div></div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -760,6 +964,9 @@ function renderSummary(){
       </div>
     </div>`).join('');
 }
+
+// ============ STOCK (removed - kept as stub) ============
+function renderStock(){ }
 
 function addExpense(){
   const desc=document.getElementById('expDesc').value.trim();
