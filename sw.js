@@ -1,4 +1,4 @@
-const CACHE_NAME = 'frankmpicks-v2';
+const CACHE_NAME = 'frankmpicks-v3';
 const BASE = '/frankmpicks';
 const ASSETS = [
   BASE + '/',
@@ -21,8 +21,12 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      return cached || fetch(e.request).catch(() => caches.match(BASE + '/index.html'));
-    })
+    fetch(e.request)
+      .then(response => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(e.request).then(cached => cached || caches.match(BASE + '/index.html')))
   );
 });
