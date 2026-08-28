@@ -368,19 +368,65 @@ let expenses=load('fmp_expenses',[]);
 let debts=load('fmp_debts',[]);
 
 (function migrate(){
-  const oS=load('fmp_sales',[]),oR=load('fmp_restocks',[]),oE=load('fmp_entries',[]);
-  const aS=[...oS,...oE.filter(e=>e.type==='sale').map(e=>({id:e.id,product:e.product,amount:e.amount*(e.qty||1),qty:e.qty||1,date:e.date}))];
-  const aR=[...oR,...oE.filter(e=>e.type==='restock').map(e=>({id:e.id,product:e.product,cost:e.amount*(e.qty||1),qty:e.qty||1,date:e.date}))];
-  if(!aS.length&&!aR.length)return;
-  if(Object.values(cycles).some(a=>a&&a.length))return;
+  // Collect from ALL possible old key names used across every version of the app
+  const allOldSales=[];
+  const allOldRestocks=[];
+
+  // Version 1 keys: fmp_entries (type=sale/restock)
+  load('fmp_entries',[]).forEach(e=>{
+    if(e.type==='sale') allOldSales.push({id:e.id,product:e.product,amount:e.amount*(e.qty||1),qty:e.qty||1,date:e.date});
+    if(e.type==='restock') allOldRestocks.push({id:e.id,product:e.product,cost:e.amount*(e.qty||1),qty:e.qty||1,date:e.date});
+  });
+
+  // Version 2 keys: fmp_sales, fmp_restocks (flat arrays)
+  load('fmp_sales',[]).forEach(s=>allOldSales.push({id:s.id,product:s.product,amount:s.amount,qty:s.qty||1,date:s.date}));
+  load('fmp_restocks',[]).forEach(r=>allOldRestocks.push({id:r.id,product:r.product,cost:r.cost,qty:r.qty||0,date:r.date}));
+
+  // Version 3 keys: ptl_ prefixed (from Peater version accidentally used on FM)
+  load('ptl_entries',[]).forEach(e=>{
+    if(e.type==='sale') allOldSales.push({id:e.id,product:e.product,amount:e.amount*(e.qty||1),qty:e.qty||1,date:e.date});
+    if(e.type==='restock') allOldRestocks.push({id:e.id,product:e.product,cost:e.amount*(e.qty||1),qty:e.qty||1,date:e.date});
+  });
+  load('ptl_sales',[]).forEach(s=>allOldSales.push({id:s.id,product:s.product,amount:s.amount,qty:s.qty||1,date:s.date}));
+  load('ptl_restocks',[]).forEach(r=>allOldRestocks.push({id:r.id,product:r.product,cost:r.cost,qty:r.qty||0,date:r.date}));
+
+  // Also check ptl_cycles (Peater cycles accidentally saved under FM)
+  const ptlCycles=load('ptl_cycles',{});
+  Object.keys(ptlCycles).forEach(pid=>{
+    (ptlCycles[pid]||[]).forEach(c=>{
+      if(c.restockCost>0||c.restockQty>0) allOldRestocks.push({id:uid(),product:pid,cost:c.restockCost||0,qty:c.restockQty||0,date:c.startDate||today()});
+      (c.sales||[]).forEach(s=>allOldSales.push({id:s.id,product:pid,amount:s.amount,qty:s.qty||1,date:s.date}));
+    });
+  });
+
+  // Deduplicate by id
+  const uniqueSales=[...new Map(allOldSales.map(s=>[s.id,s])).values()];
+  const uniqueRestocks=[...new Map(allOldRestocks.map(r=>[r.id,r])).values()];
+
+  if(!uniqueSales.length&&!uniqueRestocks.length)return;
+
+  // Only migrate if fmp_cycles is empty
+  if(Object.values(cycles).some(a=>a&&a.length>0))return;
+
+  // Build cycles per product
   products.forEach(p=>{
-    const pid=p.id,pR=aR.filter(r=>r.product===pid).sort((a,b)=>a.date.localeCompare(b.date)),pS=aS.filter(s=>s.product===pid);
+    const pid=p.id;
+    const pR=uniqueRestocks.filter(r=>r.product===pid).sort((a,b)=>a.date.localeCompare(b.date));
+    const pS=uniqueSales.filter(s=>s.product===pid);
     if(!pR.length&&!pS.length)return;
     cycles[pid]=[];
-    if(!pR.length){cycles[pid].push({id:uid(),startDate:pS[0]?.date||today(),endDate:null,restockCost:0,restockQty:0,carriedPcs:0,carriedCost:0,sales:pS});}
-    else{pR.forEach((r,i)=>{const nR=pR[i+1],cs=pS.filter(s=>s.date>=r.date&&(nR?s.date<nR.date:true));cycles[pid].push({id:uid(),startDate:r.date,endDate:nR?nR.date:null,restockCost:r.cost,restockQty:r.qty||0,carriedPcs:0,carriedCost:0,sales:cs});});}
+    if(!pR.length){
+      cycles[pid].push({id:uid(),startDate:pS[0]?.date||today(),endDate:null,restockCost:0,restockQty:0,carriedPcs:0,carriedCost:0,sales:pS});
+    } else {
+      pR.forEach((r,i)=>{
+        const nR=pR[i+1];
+        const cs=pS.filter(s=>s.date>=r.date&&(nR?s.date<nR.date:true));
+        cycles[pid].push({id:uid(),startDate:r.date,endDate:nR?nR.date:null,restockCost:r.cost,restockQty:r.qty||0,carriedPcs:0,carriedCost:0,sales:cs});
+      });
+    }
   });
   save('fmp_cycles',cycles);
+  toast('✓ Previous data restored successfully!');
 })();
 
 function getActive(pid){return(cycles[pid]||[]).find(c=>!c.endDate)||null}
