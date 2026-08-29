@@ -11,201 +11,136 @@ h1{font-size:20px;color:#f0c040;margin-bottom:4px;font-weight:700}
 p{color:#888;font-size:12px;margin-bottom:16px;line-height:1.6}
 .card{background:#1e1e2a;border:1px solid #2a2a3a;border-radius:12px;padding:14px;margin-bottom:12px}
 .card h3{font-size:13px;color:#f0c040;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
-.row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3a;font-size:12px}
+.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2a2a3a;font-size:12px}
 .row:last-child{border-bottom:none}
-.row .lbl{color:#888}.row .val{color:#3dd68c;font-weight:600}
-.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;letter-spacing:1px}
+.lbl{color:#888}.val{color:#3dd68c;font-weight:600}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px}
 .btn-scan{background:#f0c040;color:#000}
 .btn-restore{background:#3dd68c;color:#000}
 .btn-go{background:#4da6ff;color:#000}
-.status{padding:12px 14px;border-radius:8px;font-size:12px;margin-bottom:12px;line-height:1.6}
+.status{padding:12px 14px;border-radius:8px;font-size:12px;margin-bottom:12px;line-height:1.8}
 .ok{background:#3dd68c22;border:1px solid #3dd68c;color:#3dd68c}
 .err{background:#ff555522;border:1px solid #ff5555;color:#ff5555}
 .warn{background:#f0c04022;border:1px solid #f0c040;color:#f0c040}
-#log{display:none}
 </style>
 </head>
 <body>
-<h1>🔍 FM PICKS Recovery</h1>
-<p>This page will scan your phone storage, find your old data and restore it to your app. Open this page in the <strong>same Chrome browser</strong> you used before.</p>
+<h1>🔧 FM PICKS — Force Restore</h1>
+<p>This will directly write your 278 sales and 32 restocks into the exact format the new app reads. Tap the button below.</p>
 
-<button class="btn btn-scan" onclick="scan()">🔍 SCAN FOR MY DATA</button>
+<button class="btn btn-scan" onclick="forceRestore()">⚡ FORCE RESTORE MY DATA NOW</button>
 
-<div id="log"></div>
+<div id="out"></div>
 
 <script>
 function uid(){return Date.now()+Math.random().toString(36).slice(2,6)}
 
-function show(html){
-  const d=document.getElementById('log');
-  d.style.display='block';
-  d.innerHTML=html;
-}
+function forceRestore(){
+  const out=document.getElementById('out');
+  out.innerHTML='<div class="status warn">⏳ Working...</div>';
 
-function scan(){
-  // Scan every single key in localStorage
-  const all={};
-  for(let i=0;i<localStorage.length;i++){
-    const k=localStorage.key(i);
-    try{
-      const v=JSON.parse(localStorage.getItem(k));
-      if(v!==null&&v!==undefined){
-        const empty=Array.isArray(v)?v.length===0:(typeof v==='object'?Object.keys(v).length===0:false);
-        if(!empty)all[k]=v;
-      }
-    }catch(e){}
-  }
+  try{
+    // Step 1: Read flat sales and restocks that recovery page already saved
+    const rawSales=localStorage.getItem('fmp_sales');
+    const rawRestocks=localStorage.getItem('fmp_restocks');
+    const rawExpenses=localStorage.getItem('fmp_expenses');
+    const rawDebts=localStorage.getItem('fmp_debts');
+    const rawProducts=localStorage.getItem('fmp_products');
 
-  const keys=Object.keys(all);
+    const sales=JSON.parse(rawSales||'[]');
+    const restocks=JSON.parse(rawRestocks||'[]');
+    const expenses=JSON.parse(rawExpenses||'[]');
+    const debts=JSON.parse(rawDebts||'[]');
+    const products=JSON.parse(rawProducts||'[]');
 
-  if(keys.length===0){
-    show(`<div class="status err">❌ No data found in this browser's storage.<br/><br/>
-    This means either:<br/>
-    1. You are using a different browser than before<br/>
-    2. Chrome cache was cleared<br/>
-    3. The old app was on a different device<br/><br/>
-    <strong>Try opening this page in Chrome</strong> if you are not already using it.</div>`);
-    return;
-  }
-
-  // Show all keys found
-  let html=`<div class="status ok">✅ Found ${keys.length} storage items! Scanning for app data...</div>`;
-
-  // Find relevant data
-  let sales=[], restocks=[], expenses=[], debts=[], cycles={}, products=[];
-
-  keys.forEach(k=>{
-    const v=all[k];
-    // Products
-    if(k.includes('product')&&Array.isArray(v)&&v.length>0&&v[0].id) products=v;
-    // Entries (old format)
-    if(k.includes('entri')&&Array.isArray(v)){
-      v.forEach(e=>{
-        if(e.type==='sale') sales.push({id:e.id||uid(),product:e.product,amount:(e.amount||0)*(e.qty||1),qty:e.qty||1,date:e.date});
-        if(e.type==='restock') restocks.push({id:e.id||uid(),product:e.product,cost:(e.amount||0)*(e.qty||1),qty:e.qty||1,date:e.date});
-      });
+    if(sales.length===0&&restocks.length===0){
+      out.innerHTML='<div class="status err">❌ No flat sales/restocks found. Please run the recover.html scan and restore first, then come back here.</div>';
+      return;
     }
-    // Sales flat
-    if(k.includes('sale')&&!k.includes('entri')&&Array.isArray(v)){
-      v.forEach(s=>sales.push({id:s.id||uid(),product:s.product,amount:s.amount||0,qty:s.qty||1,date:s.date}));
-    }
-    // Restocks flat
-    if(k.includes('restock')&&!k.includes('entri')&&Array.isArray(v)){
-      v.forEach(r=>restocks.push({id:r.id||uid(),product:r.product,cost:r.cost||r.amount||0,qty:r.qty||1,date:r.date}));
-    }
-    // Expenses
-    if(k.includes('expense')&&Array.isArray(v)) expenses=[...expenses,...v];
-    // Debts
-    if(k.includes('debt')&&Array.isArray(v)) debts=[...debts,...v];
-    // Cycles
-    if(k.includes('cycle')&&typeof v==='object'&&!Array.isArray(v)){
-      Object.keys(v).forEach(pid=>{
-        if(!cycles[pid])cycles[pid]=[];
-        (v[pid]||[]).forEach(c=>{
-          if(!cycles[pid].find(x=>x.id===c.id)){
-            cycles[pid].push(c);
-            (c.sales||[]).forEach(s=>sales.push({id:s.id||uid(),product:pid,amount:s.amount||0,qty:s.qty||1,date:s.date}));
-            if(c.restockCost>0||c.restockQty>0) restocks.push({id:c.id+'r',product:pid,cost:c.restockCost||0,qty:c.restockQty||0,date:c.startDate||'2024-01-01'});
-          }
-        });
-      });
-    }
-  });
 
-  // Deduplicate
-  sales=[...new Map(sales.map(s=>[s.id,s])).values()];
-  restocks=[...new Map(restocks.map(r=>[r.id,r])).values()];
-  expenses=[...new Map(expenses.map(e=>[e.id,e])).values()];
-  debts=[...new Map(debts.map(d=>[d.id,d])).values()];
+    // Step 2: Define product IDs to use
+    const prodIds=products.length>0
+      ?products.map(p=>p.id)
+      :['blazer','waistcoat','chiffon','sleeveless'];
 
-  // Show all raw keys
-  html+=`<div class="card"><h3>All Storage Keys Found</h3>`;
-  keys.forEach(k=>{
-    const v=all[k];
-    const size=Array.isArray(v)?v.length+' records':(typeof v==='object'?Object.keys(v).length+' items':String(v));
-    html+=`<div class="row"><span class="lbl">${k}</span><span class="val">${size}</span></div>`;
-  });
-  html+=`</div>`;
+    // Step 3: Build fmp_cycles from scratch — FORCE overwrite
+    const newCycles={};
 
-  // Show what app data was found
-  const totalSalesAmt=sales.reduce((a,s)=>a+s.amount,0);
-  const totalRestockAmt=restocks.reduce((a,r)=>a+r.cost,0);
-
-  html+=`<div class="card"><h3>App Data Found</h3>
-    <div class="row"><span class="lbl">Sales records</span><span class="val">${sales.length} (KES ${totalSalesAmt.toLocaleString()})</span></div>
-    <div class="row"><span class="lbl">Restock records</span><span class="val">${restocks.length} (KES ${totalRestockAmt.toLocaleString()})</span></div>
-    <div class="row"><span class="lbl">Expenses</span><span class="val">${expenses.length}</span></div>
-    <div class="row"><span class="lbl">Debts</span><span class="val">${debts.length}</span></div>
-    <div class="row"><span class="lbl">Cycle records</span><span class="val">${Object.values(cycles).reduce((a,c)=>a+c.length,0)}</span></div>
-  </div>`;
-
-  if(sales.length===0&&restocks.length===0&&Object.keys(cycles).length===0){
-    html+=`<div class="status warn">⚠️ Storage was found but no sales or restock data detected.<br/>Your data might have been cleared or is in a different browser.</div>`;
-    show(html);return;
-  }
-
-  // Store found data for restore
-  window._recovery={sales,restocks,expenses,debts,cycles,products};
-
-  html+=`<button class="btn btn-restore" onclick="restore()">✅ RESTORE THIS DATA TO MY APP</button>`;
-  show(html);
-}
-
-function restore(){
-  const {sales,restocks,expenses,debts,cycles,products}=window._recovery;
-
-  // Save products if found
-  if(products.length>0) localStorage.setItem('fmp_products',JSON.stringify(products));
-
-  // Save expenses and debts
-  localStorage.setItem('fmp_expenses',JSON.stringify(expenses));
-  localStorage.setItem('fmp_debts',JSON.stringify(debts));
-
-  // Build fmp_cycles
-  const prods=products.length?products:[
-    {id:'blazer'},{id:'waistcoat'},{id:'chiffon'},{id:'sleeveless'}
-  ];
-
-  let finalCycles=JSON.parse(JSON.stringify(cycles));
-
-  // If no cycles, build from flat sales/restocks
-  const hasCycles=Object.values(finalCycles).some(a=>a&&a.length>0);
-  if(!hasCycles){
-    prods.forEach(p=>{
-      const pid=p.id;
-      const pR=restocks.filter(r=>r.product===pid).sort((a,b)=>a.date.localeCompare(b.date));
+    prodIds.forEach(pid=>{
+      const pR=restocks.filter(r=>r.product===pid).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
       const pS=sales.filter(s=>s.product===pid);
+
       if(!pR.length&&!pS.length)return;
-      finalCycles[pid]=[];
+
+      newCycles[pid]=[];
+
       if(!pR.length){
-        finalCycles[pid].push({id:uid(),startDate:pS[0]?.date||'2024-01-01',endDate:null,restockCost:0,restockQty:0,carriedPcs:0,carriedCost:0,sales:pS});
+        // No restocks — put all sales in one open cycle
+        newCycles[pid].push({
+          id:uid(),
+          startDate:pS[0]?.date||'2024-01-01',
+          endDate:null,
+          restockCost:0,
+          restockQty:0,
+          carriedPcs:0,
+          carriedCost:0,
+          sales:pS.map(s=>({id:s.id||uid(),amount:s.amount||0,qty:s.qty||1,date:s.date}))
+        });
       } else {
         pR.forEach((r,i)=>{
           const nR=pR[i+1];
-          const cs=pS.filter(s=>s.date>=r.date&&(nR?s.date<nR.date:true));
-          finalCycles[pid].push({id:uid(),startDate:r.date,endDate:nR?nR.date:null,restockCost:r.cost,restockQty:r.qty||0,carriedPcs:0,carriedCost:0,sales:cs});
+          const cycleSales=pS.filter(s=>{
+            return s.date>=r.date&&(nR?s.date<nR.date:true);
+          });
+          newCycles[pid].push({
+            id:uid(),
+            startDate:r.date,
+            endDate:nR?nR.date:null,
+            restockCost:r.cost||0,
+            restockQty:r.qty||0,
+            carriedPcs:0,
+            carriedCost:0,
+            sales:cycleSales.map(s=>({id:s.id||uid(),amount:s.amount||0,qty:s.qty||1,date:s.date}))
+          });
         });
       }
     });
+
+    // Step 4: FORCE write — delete old cycles first then write new
+    localStorage.removeItem('fmp_cycles');
+    localStorage.setItem('fmp_cycles',JSON.stringify(newCycles));
+
+    // Also make sure expenses and debts are saved
+    localStorage.setItem('fmp_expenses',JSON.stringify(expenses));
+    localStorage.setItem('fmp_debts',JSON.stringify(debts));
+
+    // Step 5: Verify what was written
+    const written=JSON.parse(localStorage.getItem('fmp_cycles')||'{}');
+    let totalSalesWritten=0,totalCycles=0;
+    Object.values(written).forEach(cs=>{
+      totalCycles+=cs.length;
+      cs.forEach(c=>totalSalesWritten+=(c.sales||[]).length);
+    });
+
+    const totalSalesAmt=sales.reduce((a,s)=>a+s.amount,0);
+    const totalRestockAmt=restocks.reduce((a,r)=>a+r.cost,0);
+
+    out.innerHTML=`
+      <div class="status ok">
+        ✅ <strong>Force Restore Complete!</strong><br/><br/>
+        Sales written: <strong>${totalSalesWritten} records</strong><br/>
+        Cycles created: <strong>${totalCycles}</strong><br/>
+        Total Sales: <strong>KES ${totalSalesAmt.toLocaleString()}</strong><br/>
+        Total Restock: <strong>KES ${totalRestockAmt.toLocaleString()}</strong><br/>
+        Expenses: <strong>${expenses.length}</strong><br/>
+        Debts: <strong>${debts.length}</strong><br/><br/>
+        Now tap the button below to open your app!
+      </div>
+      <button class="btn btn-go" onclick="window.location.href='https://frankmwas2-sys.github.io/frankmpicks'">🚀 OPEN FRANK M PICKS APP</button>`;
+
+  }catch(e){
+    out.innerHTML=`<div class="status err">❌ Error: ${e.message}</div>`;
   }
-
-  localStorage.setItem('fmp_cycles',JSON.stringify(finalCycles));
-  localStorage.setItem('fmp_sales',JSON.stringify(sales));
-  localStorage.setItem('fmp_restocks',JSON.stringify(restocks));
-
-  const totalSales=sales.reduce((a,s)=>a+s.amount,0);
-  const totalRestock=restocks.reduce((a,r)=>a+r.cost,0);
-
-  document.getElementById('log').innerHTML+=`
-    <div class="status ok">
-      ✅ <strong>Data Restored Successfully!</strong><br/><br/>
-      Sales: ${sales.length} records — KES ${totalSales.toLocaleString()}<br/>
-      Restocks: ${restocks.length} records — KES ${totalRestock.toLocaleString()}<br/>
-      Expenses: ${expenses.length} records<br/>
-      Debts: ${debts.length} records<br/><br/>
-      Now tap the button below to open your app!
-    </div>
-    <button class="btn btn-go" onclick="window.location.href='https://frankmwas2-sys.github.io/frankmpicks'">🚀 OPEN FRANK M PICKS APP</button>`;
 }
 </script>
 </body>
