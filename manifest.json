@@ -1,8 +1,9 @@
 {
   "name": "FRANK M PICKS",
   "short_name": "FM PICKS",
-  "description": "Business management app for Frank M Picks",
-  "start_url": "/",
+  "description": "Frank M Picks business management app",
+  "start_url": "/frankmpicks/",
+  "scope": "/frankmpicks/",
   "display": "standalone",
   "background_color": "#0e0e14",
   "theme_color": "#1a0a2e",
