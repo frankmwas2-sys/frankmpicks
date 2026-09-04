@@ -855,25 +855,7 @@ function renderStock(){
         </div>
         ${cTotalCost(active)>0?`<div style="margin-top:8px;padding:6px 10px;background:var(--card);border-radius:6px;display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--muted)">Total to recover:</span><span style="font-weight:700;color:var(--accent2)">KES ${cTotalCost(active).toLocaleString()}</span></div>`:""}
         ${cUnrecovered(active)>0?`<div style="margin-top:4px;padding:6px 10px;background:#ff555522;border-radius:6px;display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--red)">Still unrecovered:</span><span style="font-weight:700;color:var(--red)">KES ${cUnrecovered(active).toLocaleString()}</span></div>`:`<div style="margin-top:4px;padding:6px 10px;background:#3dd68c22;border-radius:6px;font-size:11px;color:var(--green);text-align:center">&#x2713; Restock cost fully recovered!</div>`}
-      </div>`:`
-      <div style="background:var(--bg);border-radius:8px;padding:14px;margin-bottom:10px;border-left:3px solid ${prod.color}">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">No restock recorded yet for this cycle</div>
-        ${getAllC(prod.id).reduce((a,c)=>a+(c.sales||[]).length,0)>0?`
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:center">
-          <div style="background:var(--card);border-radius:6px;padding:8px">
-            <div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--blue)">${getAllC(prod.id).reduce((a,c)=>a+cSalesPcs(c),0)}</div>
-            <div style="font-size:9px;color:var(--muted)">TOTAL SOLD</div>
-            <div style="font-size:10px;color:var(--blue)">KES ${getAllC(prod.id).reduce((a,c)=>a+cSalesAmt(c),0).toLocaleString()}</div>
-          </div>
-          <div style="background:var(--card);border-radius:6px;padding:8px">
-            <div style="font-family:Bebas Neue,sans-serif;font-size:20px;color:var(--green)">${getAllC(prod.id).reduce((a,c)=>a+cSalesAmt(c),0).toLocaleString()}</div>
-            <div style="font-size:9px;color:var(--muted)">REVENUE KES</div>
-          </div>
-        </div>`:""}
-        <div style="margin-top:10px;padding:8px 10px;background:#f0c04022;border-radius:6px;font-size:11px;color:var(--accent);text-align:center">
-          &#x26A0;&#xFE0F; Record a restock to start tracking cycles properly
-        </div>
-      </div>`;
+      </div>`:`<div style="text-align:center;color:var(--muted);font-size:12px;padding:14px 0">No active cycle &#x2014; record a restock to begin</div>`;
 
     const closed=allCyc.filter(c=>c.endDate).slice().reverse();
     const history=closed.length>0?`
@@ -1118,7 +1100,7 @@ document.getElementById("expDate").value=today();
 document.getElementById("debtDate").value=today();
 document.getElementById("restockDate").value=today();
 if("Notification" in window)Notification.requestPermission();
-if("serviceWorker" in navigator)navigator.serviceWorker.register("/frankmpicks/sw.js");
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
 loadTheme();
 render();
 // Check low stock every 30 minutes
